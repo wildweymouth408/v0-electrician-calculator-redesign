@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import { calculatePipeBending, type PipeBendingInputs } from '@/lib/calculations'
-import { saveCalculation, generateId, type SavedCalculation, getJobs, addNoteToJob } from '@/lib/storage'
+import { saveCalculation, generateId, type SavedCalculation } from '@/lib/storage'
+import { AttachToJob } from '@/components/tools/attach-to-job'
 import { toast } from 'sonner'
-import { Save, Zap, Camera } from 'lucide-react'
+import { Save, Camera } from 'lucide-react'
 import { ArDemoOverlay } from './ar-demo-overlay'
 
 export function PipeBendingCalculator() {
@@ -34,14 +35,7 @@ export function PipeBendingCalculator() {
     toast.success('Calculation saved')
   }
 
-  function handleAddToJob() {
-    if (!result) return
-    const jobs = getJobs()
-    if (jobs.length === 0) { toast.error('No jobs created yet.'); return }
-    const note = `[Pipe Bending] ${result.bendType}, ${inputs.offsetHeight}" offset, Distance: ${result.distanceBetweenBends}", Shrinkage: ${result.shrinkage}"`
-    addNoteToJob(jobs[0].id, note)
-    toast.success(`Added to ${jobs[0].name}`)
-  }
+  const jobNote = result ? `[Pipe Bending] ${result.bendType}, ${inputs.offsetHeight}" offset, Distance: ${result.distanceBetweenBends}", Shrinkage: ${result.shrinkage}"` : ''
 
   return (
     <div className="flex flex-col gap-5">
@@ -197,19 +191,19 @@ export function PipeBendingCalculator() {
 
       {/* Actions */}
       {result && (
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowAR(true)}
-            className="flex items-center justify-center gap-2 border border-[#333] bg-[#1a1a1a] px-4 py-3 text-xs font-medium uppercase tracking-wider text-[#888] hover:bg-[#222]"
-          >
-            <Camera className="h-4 w-4" /> AR
-          </button>
-          <button onClick={handleSave} className="flex flex-1 items-center justify-center gap-2 border border-[#333] bg-[#1a1a1a] py-3 text-xs font-medium uppercase tracking-wider text-[#f0f0f0] hover:bg-[#222]">
-            <Save className="h-4 w-4" /> Save
-          </button>
-          <button onClick={handleAddToJob} className="flex flex-1 items-center justify-center gap-2 bg-[#ff6b00] py-3 text-xs font-bold uppercase tracking-wider text-[#0f1115] hover:bg-[#ff8533]">
-            <Zap className="h-4 w-4" /> Add to Job
-          </button>
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowAR(true)}
+              className="flex items-center justify-center gap-2 border border-[#333] bg-[#1a1a1a] px-4 py-3 text-xs font-medium uppercase tracking-wider text-[#888] hover:bg-[#222]"
+            >
+              <Camera className="h-4 w-4" /> AR Demo
+            </button>
+            <button onClick={handleSave} className="flex flex-1 items-center justify-center gap-2 border border-[#333] bg-[#1a1a1a] py-3 text-xs font-medium uppercase tracking-wider text-[#f0f0f0] hover:bg-[#222]">
+              <Save className="h-4 w-4" /> Save
+            </button>
+          </div>
+          <AttachToJob note={jobNote} />
         </div>
       )}
     </div>

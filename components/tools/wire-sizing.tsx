@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { calculateWireSizing, type WireSizingInputs } from '@/lib/calculations'
 import { SYSTEM_VOLTAGES, INSULATION_TYPES } from '@/lib/calculator-data'
 import { saveCalculation, generateId, type SavedCalculation } from '@/lib/storage'
+import { AttachToJob } from '@/components/tools/attach-to-job'
 import { toast } from 'sonner'
 import { Check, X, Save } from 'lucide-react'
 
@@ -138,9 +139,12 @@ export function WireSizingCalculator({ compact = false }: { compact?: boolean })
       )}
 
       {result && !compact && (
-        <button onClick={handleSave} className="flex items-center justify-center gap-2 border border-[#333] bg-[#1a1a1a] py-3 text-xs font-medium uppercase tracking-wider text-[#f0f0f0] hover:bg-[#222]">
-          <Save className="h-4 w-4" /> Save Calculation
-        </button>
+        <div className="flex flex-col gap-2">
+          <button onClick={handleSave} className="flex items-center justify-center gap-2 border border-[#333] bg-[#1a1a1a] py-3 text-xs font-medium uppercase tracking-wider text-[#f0f0f0] hover:bg-[#222]">
+            <Save className="h-4 w-4" /> Save Calculation
+          </button>
+          <AttachToJob note={`[Wire Sizing] ${inputs.loadAmps}A, ${inputs.distance}ft, ${inputs.systemVoltage}V = #${result.recommendedSize} AWG (${result.dropPercent}% drop)`} />
+        </div>
       )}
     </div>
   )

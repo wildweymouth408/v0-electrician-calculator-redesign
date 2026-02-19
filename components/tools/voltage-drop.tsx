@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import { calculateVoltageDrop, type VoltageDropInputs } from '@/lib/calculations'
 import { WIRE_SIZES, SYSTEM_VOLTAGES } from '@/lib/calculator-data'
-import { saveCalculation, generateId, type SavedCalculation, getJobs, addNoteToJob } from '@/lib/storage'
+import { saveCalculation, generateId, type SavedCalculation } from '@/lib/storage'
+import { AttachToJob } from '@/components/tools/attach-to-job'
 import { toast } from 'sonner'
-import { Check, X, Save, Zap } from 'lucide-react'
+import { Check, X, Save } from 'lucide-react'
 
 export function VoltageDropCalculator() {
   const [inputs, setInputs] = useState<VoltageDropInputs>({
@@ -33,16 +34,7 @@ export function VoltageDropCalculator() {
     toast.success('Calculation saved')
   }
 
-  function handleAddToJob() {
-    const jobs = getJobs()
-    if (jobs.length === 0) {
-      toast.error('No jobs created yet. Create a job first.')
-      return
-    }
-    const note = `[Voltage Drop] ${inputs.systemVoltage}V, ${inputs.current}A, ${inputs.distance}ft, #${inputs.wireSize} ${inputs.material === 'copper' ? 'Cu' : 'Al'} = ${result.voltageDrop}V / ${result.dropPercent}% (${result.pass ? 'PASS' : 'FAIL'})`
-    addNoteToJob(jobs[0].id, note)
-    toast.success(`Added to ${jobs[0].name}`)
-  }
+  const jobNote = `[Voltage Drop] ${inputs.systemVoltage}V, ${inputs.current}A, ${inputs.distance}ft, #${inputs.wireSize} ${inputs.material === 'copper' ? 'Cu' : 'Al'} = ${result.voltageDrop}V / ${result.dropPercent}% (${result.pass ? 'PASS' : 'FAIL'})`
 
   return (
     <div className="flex flex-col gap-5">
@@ -168,19 +160,14 @@ export function VoltageDropCalculator() {
 
       {/* Actions */}
       {hasResult && (
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           <button
             onClick={handleSave}
-            className="flex flex-1 items-center justify-center gap-2 border border-[#333] bg-[#1a1a1a] py-3 text-xs font-medium uppercase tracking-wider text-[#f0f0f0] transition-colors hover:bg-[#222]"
+            className="flex items-center justify-center gap-2 border border-[#333] bg-[#1a1a1a] py-3 text-xs font-medium uppercase tracking-wider text-[#f0f0f0] transition-colors hover:bg-[#222]"
           >
-            <Save className="h-4 w-4" /> Save
+            <Save className="h-4 w-4" /> Save Calculation
           </button>
-          <button
-            onClick={handleAddToJob}
-            className="flex flex-1 items-center justify-center gap-2 bg-[#ff6b00] py-3 text-xs font-bold uppercase tracking-wider text-[#0f1115] transition-colors hover:bg-[#ff8533]"
-          >
-            <Zap className="h-4 w-4" /> Add to Job
-          </button>
+          <AttachToJob note={jobNote} />
         </div>
       )}
     </div>

@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import { calculateConduitFill, type ConduitFillInputs } from '@/lib/calculations'
 import { CONDUIT_TYPES, CONDUIT_TRADE_SIZES, INSULATION_TYPES, COMMON_WIRE_SIZES } from '@/lib/calculator-data'
-import { saveCalculation, generateId, type SavedCalculation, getJobs, addNoteToJob } from '@/lib/storage'
+import { saveCalculation, generateId, type SavedCalculation } from '@/lib/storage'
+import { AttachToJob } from '@/components/tools/attach-to-job'
 import { toast } from 'sonner'
-import { Check, X, Save, Zap } from 'lucide-react'
+import { Check, X, Save } from 'lucide-react'
 
 export function ConduitFillCalculator() {
   const [inputs, setInputs] = useState<ConduitFillInputs>({
@@ -32,13 +33,7 @@ export function ConduitFillCalculator() {
     toast.success('Calculation saved')
   }
 
-  function handleAddToJob() {
-    const jobs = getJobs()
-    if (jobs.length === 0) { toast.error('No jobs created yet.'); return }
-    const note = `[Conduit Fill] ${inputs.conduitType} ${inputs.tradeSize}", ${inputs.wireCount}x #${inputs.wireSize} ${inputs.wireType} = ${result.fillPercent}% fill (${result.pass ? 'PASS' : 'FAIL'})`
-    addNoteToJob(jobs[0].id, note)
-    toast.success(`Added to ${jobs[0].name}`)
-  }
+  const jobNote = `[Conduit Fill] ${inputs.conduitType} ${inputs.tradeSize}", ${inputs.wireCount}x #${inputs.wireSize} ${inputs.wireType} = ${result.fillPercent}% fill (${result.pass ? 'PASS' : 'FAIL'})`
 
   return (
     <div className="flex flex-col gap-5">
@@ -152,13 +147,11 @@ export function ConduitFillCalculator() {
       )}
 
       {hasResult && result.totalWireArea > 0 && (
-        <div className="flex gap-2">
-          <button onClick={handleSave} className="flex flex-1 items-center justify-center gap-2 border border-[#333] bg-[#1a1a1a] py-3 text-xs font-medium uppercase tracking-wider text-[#f0f0f0] hover:bg-[#222]">
-            <Save className="h-4 w-4" /> Save
+        <div className="flex flex-col gap-2">
+          <button onClick={handleSave} className="flex items-center justify-center gap-2 border border-[#333] bg-[#1a1a1a] py-3 text-xs font-medium uppercase tracking-wider text-[#f0f0f0] hover:bg-[#222]">
+            <Save className="h-4 w-4" /> Save Calculation
           </button>
-          <button onClick={handleAddToJob} className="flex flex-1 items-center justify-center gap-2 bg-[#ff6b00] py-3 text-xs font-bold uppercase tracking-wider text-[#0f1115] hover:bg-[#ff8533]">
-            <Zap className="h-4 w-4" /> Add to Job
-          </button>
+          <AttachToJob note={jobNote} />
         </div>
       )}
     </div>

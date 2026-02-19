@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { calculateBoxFill, type BoxFillInputs } from '@/lib/calculations'
 import { STANDARD_BOXES, COMMON_WIRE_SIZES } from '@/lib/calculator-data'
 import { saveCalculation, generateId, type SavedCalculation } from '@/lib/storage'
+import { AttachToJob } from '@/components/tools/attach-to-job'
 import { toast } from 'sonner'
 import { Check, X, Save, Plus, Minus } from 'lucide-react'
 
@@ -214,9 +215,12 @@ export function BoxFillCalculator({ compact = false }: { compact?: boolean }) {
       </div>
 
       {!compact && (
-        <button onClick={handleSave} className="flex items-center justify-center gap-2 border border-[#333] bg-[#1a1a1a] py-3 text-xs font-medium uppercase tracking-wider text-[#f0f0f0] hover:bg-[#222]">
-          <Save className="h-4 w-4" /> Save Calculation
-        </button>
+        <div className="flex flex-col gap-2">
+          <button onClick={handleSave} className="flex items-center justify-center gap-2 border border-[#333] bg-[#1a1a1a] py-3 text-xs font-medium uppercase tracking-wider text-[#f0f0f0] hover:bg-[#222]">
+            <Save className="h-4 w-4" /> Save Calculation
+          </button>
+          <AttachToJob note={`[Box Fill] ${STANDARD_BOXES[boxType]?.description || 'Custom'}: ${result.totalRequired} / ${result.boxCapacity} cu.in. (${result.pass ? 'PASS' : 'FAIL'})`} />
+        </div>
       )}
     </div>
   )

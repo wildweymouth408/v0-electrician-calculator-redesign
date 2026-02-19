@@ -11,12 +11,23 @@ export interface UserSettings {
   notifications: boolean
 }
 
+export interface CrewMember {
+  id: string
+  name: string
+  role: string
+  phone: string
+}
+
 export interface Task {
   id: string
   name: string
   assignee: string
   status: 'pending' | 'in-progress' | 'completed'
-  photoUrl?: string
+  priority: 'high' | 'medium' | 'low'
+  dueDate: string
+  necReference: string
+  photos: string[]
+  completedAt: string
   notes: string
   createdAt: string
 }
@@ -25,9 +36,11 @@ export interface Job {
   id: string
   name: string
   address: string
-  crew: string[]
+  crew: CrewMember[]
   tasks: Task[]
   notes: string[]
+  status: 'on-track' | 'at-risk' | 'complete'
+  color: string
   createdAt: string
 }
 

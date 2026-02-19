@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { calculateOhmsLaw } from '@/lib/calculations'
-import { saveCalculation, generateId, type SavedCalculation, getJobs, addNoteToJob } from '@/lib/storage'
+import { saveCalculation, generateId, type SavedCalculation } from '@/lib/storage'
+import { AttachToJob } from '@/components/tools/attach-to-job'
 import { toast } from 'sonner'
-import { Save, Zap } from 'lucide-react'
+import { Save } from 'lucide-react'
 
 export function OhmsLawCalculator() {
   const [voltage, setVoltage] = useState<string>('')
@@ -48,14 +49,7 @@ export function OhmsLawCalculator() {
     toast.success('Calculation saved')
   }
 
-  function handleAddToJob() {
-    if (!result) return
-    const jobs = getJobs()
-    if (jobs.length === 0) { toast.error('No jobs created yet.'); return }
-    const note = `[Ohm's Law] V=${result.voltage}V, I=${result.current}A, R=${result.resistance}\u03A9, P=${result.power}W`
-    addNoteToJob(jobs[0].id, note)
-    toast.success(`Added to ${jobs[0].name}`)
-  }
+  const jobNote = result ? `[Ohm's Law] V=${result.voltage}V, I=${result.current}A, R=${result.resistance}\u03A9, P=${result.power}W` : ''
 
   // Triangle SVG
   const triangleHighlight = result?.solvedFor || ''
@@ -171,20 +165,18 @@ export function OhmsLawCalculator() {
       )}
 
       {/* Actions */}
-      <div className="flex gap-2">
-        <button onClick={handleClear} className="flex flex-1 items-center justify-center border border-[#333] bg-[#1a1a1a] py-3 text-xs font-medium uppercase tracking-wider text-[#888] hover:bg-[#222]">
-          Clear
-        </button>
-        {result && (
-          <>
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-2">
+          <button onClick={handleClear} className="flex flex-1 items-center justify-center border border-[#333] bg-[#1a1a1a] py-3 text-xs font-medium uppercase tracking-wider text-[#888] hover:bg-[#222]">
+            Clear
+          </button>
+          {result && (
             <button onClick={handleSave} className="flex flex-1 items-center justify-center gap-2 border border-[#333] bg-[#1a1a1a] py-3 text-xs font-medium uppercase tracking-wider text-[#f0f0f0] hover:bg-[#222]">
               <Save className="h-4 w-4" /> Save
             </button>
-            <button onClick={handleAddToJob} className="flex flex-1 items-center justify-center gap-2 bg-[#ff6b00] py-3 text-xs font-bold uppercase tracking-wider text-[#0f1115] hover:bg-[#ff8533]">
-              <Zap className="h-4 w-4" /> Job
-            </button>
-          </>
-        )}
+          )}
+        </div>
+        {result && <AttachToJob note={jobNote} />}
       </div>
     </div>
   )
