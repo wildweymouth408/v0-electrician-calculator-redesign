@@ -2,10 +2,9 @@
 import { useState, useEffect } from 'react'
 import { BottomNav, type TabId } from '@/components/bottom-nav'
 import { ToolsTab } from '@/components/tools-tab'
-import { CalcsTab } from '@/components/calcs-tab'
+import { ReferenceTab } from '@/components/reference-tab'
 import { AskSparkyTab } from '@/components/ask-sparky-tab'
 
-// Temporary placeholders — we'll build these in the next steps
 function HomeTab() {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-3 text-[#555]">
@@ -13,17 +12,6 @@ function HomeTab() {
         <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
       </svg>
       <span className="text-sm uppercase tracking-widest">Home — Coming Next</span>
-    </div>
-  )
-}
-
-function ReferenceTab() {
-  return (
-    <div className="flex flex-col items-center justify-center h-full gap-3 text-[#555]">
-      <svg viewBox="0 0 24 24" className="h-8 w-8 text-[#00ff88]" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-      </svg>
-      <span className="text-sm uppercase tracking-widest">Reference — Coming Next</span>
     </div>
   )
 }
@@ -75,7 +63,6 @@ export default function SparkyApp() {
 
   return (
     <div className="flex h-dvh flex-col bg-[#0f1115] text-[#f0f0f0]">
-      {/* Top header */}
       <header className="flex items-center justify-between border-b border-[#333] bg-[#0f1115] px-4 py-3">
         <div className="flex items-center gap-2.5">
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5"
@@ -100,7 +87,6 @@ export default function SparkyApp() {
         </div>
       </header>
 
-      {/* Content area */}
       <main className="flex-1 overflow-y-auto px-4 py-4 pb-24">
         {activeTab === 'home'      && <HomeTab />}
         {activeTab === 'tools'     && <ToolsTab />}
@@ -109,7 +95,6 @@ export default function SparkyApp() {
         {activeTab === 'more'      && <MoreTab />}
       </main>
 
-      {/* Bottom navigation */}
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   )
