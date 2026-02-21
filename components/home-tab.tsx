@@ -6,6 +6,7 @@ import {
   Plus, Trash2, Calendar, Shield, Clock, Lightbulb, Edit2, Check, X
 } from 'lucide-react'
 import { getTipOfTheDay } from '@/lib/tips'
+import { supabase } from '@/lib/supabase'
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -27,29 +28,14 @@ interface Credential {
 }
 
 const ROLE_OPTIONS = [
-  'Apprentice - Year 1',
-  'Apprentice - Year 2',
-  'Apprentice - Year 3',
-  'Apprentice - Year 4',
-  'Apprentice - Year 5',
-  'Journeyman',
-  'Foreman',
-  'General Foreman',
-  'Master Electrician',
-  'Estimator',
-  'Inspector',
+  'Apprentice - Year 1','Apprentice - Year 2','Apprentice - Year 3',
+  'Apprentice - Year 4','Apprentice - Year 5','Journeyman','Foreman',
+  'General Foreman','Master Electrician','Estimator','Inspector',
 ]
 
 const WORK_TYPES = ['Residential', 'Commercial', 'Industrial', 'Mixed']
 
-const CREDENTIAL_CATEGORIES = [
-  'License',
-  'OSHA',
-  'Safety',
-  'Manufacturer',
-  'First Aid',
-  'Other',
-]
+const CREDENTIAL_CATEGORIES = ['License','OSHA','Safety','Manufacturer','First Aid','Other']
 
 const DEFAULT_CREDENTIALS: Credential[] = [
   { id: '1', name: 'State Electrical License', issueDate: '', expiryDate: '', category: 'License' },
@@ -78,9 +64,76 @@ function expiryLabel(days: number | null, dateStr: string): string {
   if (days === null) return ''
   if (days < 0) return `Expired ${Math.abs(days)}d ago`
   if (days === 0) return 'Expires today!'
-  if (days < 30) return `Expires in ${days}d`
   if (days < 90) return `Expires in ${days}d`
   return `Valid · ${days}d remaining`
+}
+
+// ─── AUTH SCREEN ─────────────────────────────────────────────────────────────
+
+function AuthScreen({ onAuth }: { onAuth: () => void }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isLogin, setIsLogin] = useState(true)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const inp = 'w-full bg-[#0a0b0e] border border-[#2a2a35] px-3 py-3 text-sm text-[#f0f0f0] focus:border-[#ff6b00] focus:outline-none'
+  const lbl = 'block text-[10px] uppercase tracking-wider text-[#555] mb-1.5'
+
+  async function handleSubmit() {
+    setError('')
+    setLoading(true)
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) throw error
+      } else {
+        const { error } = await supabase.auth.signUp({ email, password })
+        if (error) throw error
+      }
+      onAuth()
+    } catch (e: any) {
+      setError(e.message)
+    }
+    setLoading(false)
+  }
+
+  return (
+    <div className="flex flex-col h-full justify-center px-2 py-6">
+      <div className="flex flex-col items-center mb-8">
+        <div className="flex items-center justify-center w-14 h-14 bg-[#ff6b00] mb-3">
+          <Zap className="h-7 w-7 text-[#0f1115]" />
+        </div>
+        <h1 className="text-2xl font-bold text-[#ff6b00] uppercase tracking-wider">Sparky</h1>
+        <p className="text-[11px] text-[#555] uppercase tracking-widest mt-1">Your Field Electrical Assistant</p>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <div>
+          <label className={lbl}>Email</label>
+          <input className={inp} type="email" value={email}
+            onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
+        </div>
+        <div>
+          <label className={lbl}>Password</label>
+          <input className={inp} type="password" value={password}
+            onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
+        </div>
+
+        {error && <p className="text-xs text-[#ff4444]">{error}</p>}
+
+        <button onClick={handleSubmit} disabled={loading || !email || !password}
+          className="w-full py-3.5 bg-[#ff6b00] text-[#0f1115] text-sm font-bold uppercase tracking-wider disabled:opacity-40 mt-2">
+          {loading ? 'Please wait...' : isLogin ? 'Sign In →' : 'Create Account →'}
+        </button>
+
+        <button onClick={() => setIsLogin(!isLogin)}
+          className="text-xs text-[#555] underline text-center">
+          {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+        </button>
+      </div>
+    </div>
+  )
 }
 
 // ─── ONBOARDING SCREEN ────────────────────────────────────────────────────────
@@ -100,7 +153,6 @@ function OnboardingScreen({ onComplete }: { onComplete: (profile: UserProfile) =
 
   return (
     <div className="flex flex-col h-full justify-center px-2 py-6">
-      {/* Logo */}
       <div className="flex flex-col items-center mb-8">
         <div className="flex items-center justify-center w-14 h-14 bg-[#ff6b00] mb-3">
           <Zap className="h-7 w-7 text-[#0f1115]" />
@@ -114,26 +166,21 @@ function OnboardingScreen({ onComplete }: { onComplete: (profile: UserProfile) =
           <div className="text-center mb-2">
             <p className="text-sm text-[#888]">Let's set up your profile so Sparky knows who you are.</p>
           </div>
-
           <div>
             <label className={lbl}>Your First Name</label>
-            <input className={inp} value={name} onChange={e => setName(e.target.value)}
-              placeholder="e.g. Mike" autoFocus />
+            <input className={inp} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Mike" autoFocus />
           </div>
-
           <div>
             <label className={lbl}>Your Role</label>
             <select className={sel} value={role} onChange={e => setRole(e.target.value)}>
               {ROLE_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
-
           <div>
             <label className={lbl}>Years of Experience</label>
             <input className={inp} type="number" min={0} max={50} value={yearsExp}
               onChange={e => setYearsExp(parseInt(e.target.value) || 0)} />
           </div>
-
           <div>
             <label className={lbl}>Primary Work Type</label>
             <div className="grid grid-cols-2 gap-2">
@@ -145,10 +192,7 @@ function OnboardingScreen({ onComplete }: { onComplete: (profile: UserProfile) =
               ))}
             </div>
           </div>
-
-          <button
-            onClick={() => name.trim() ? setStep(2) : null}
-            disabled={!name.trim()}
+          <button onClick={() => name.trim() ? setStep(2) : null} disabled={!name.trim()}
             className="w-full py-3.5 bg-[#ff6b00] text-[#0f1115] text-sm font-bold uppercase tracking-wider disabled:opacity-40 mt-2">
             Continue →
           </button>
@@ -160,7 +204,6 @@ function OnboardingScreen({ onComplete }: { onComplete: (profile: UserProfile) =
           <div className="text-center mb-2">
             <p className="text-sm text-[#888]">Optional — add your license info now or later.</p>
           </div>
-
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2">
               <label className={lbl}>License Number</label>
@@ -174,13 +217,11 @@ function OnboardingScreen({ onComplete }: { onComplete: (profile: UserProfile) =
                 placeholder="CA" maxLength={2} />
             </div>
           </div>
-
           <div className="bg-[#111] border border-[#2a2a35] p-3 mt-2">
             <p className="text-[10px] text-[#555] leading-relaxed">
               You can add OSHA cards, certifications, and other credentials after setup. Sparky will track expiration dates and remind you before they lapse.
             </p>
           </div>
-
           <div className="flex gap-2 mt-2">
             <button onClick={() => setStep(1)}
               className="flex-1 py-3.5 border border-[#2a2a35] text-[#555] text-sm font-bold uppercase tracking-wider">
@@ -200,9 +241,7 @@ function OnboardingScreen({ onComplete }: { onComplete: (profile: UserProfile) =
 
 // ─── CREDENTIAL CARD ─────────────────────────────────────────────────────────
 
-function CredentialCard({
-  cred, onEdit, onDelete
-}: {
+function CredentialCard({ cred, onEdit, onDelete }: {
   cred: Credential
   onEdit: (cred: Credential) => void
   onDelete: (id: string) => void
@@ -244,9 +283,7 @@ function CredentialCard({
 
 // ─── EDIT CREDENTIAL MODAL ────────────────────────────────────────────────────
 
-function EditCredentialModal({
-  cred, onSave, onClose
-}: {
+function EditCredentialModal({ cred, onSave, onClose }: {
   cred: Credential | null
   onSave: (cred: Credential) => void
   onClose: () => void
@@ -271,20 +308,17 @@ function EditCredentialModal({
           </span>
           <button onClick={onClose}><X className="h-4 w-4 text-[#555]" /></button>
         </div>
-
         <div>
           <label className={lbl}>Name</label>
           <input className={inp} value={name} onChange={e => setName(e.target.value)}
             placeholder="e.g. OSHA 30, C-10 License..." />
         </div>
-
         <div>
           <label className={lbl}>Category</label>
           <select className={sel} value={category} onChange={e => setCategory(e.target.value)}>
             {CREDENTIAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
-
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={lbl}>Issue Date</label>
@@ -295,7 +329,6 @@ function EditCredentialModal({
             <input className={inp} type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} />
           </div>
         </div>
-
         <button
           onClick={() => {
             if (!name.trim()) return
@@ -316,6 +349,7 @@ function EditCredentialModal({
 // ─── MAIN HOME TAB ────────────────────────────────────────────────────────────
 
 export function HomeTab() {
+  const [userId, setUserId] = useState<string | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [credentials, setCredentials] = useState<Credential[]>(DEFAULT_CREDENTIALS)
   const [editingCred, setEditingCred] = useState<Credential | null>(null)
@@ -323,36 +357,90 @@ export function HomeTab() {
   const [loaded, setLoaded] = useState(false)
   const tip = getTipOfTheDay()
 
-  // Load from localStorage
+  // Check auth on mount
   useEffect(() => {
-    try {
-      const p = localStorage.getItem('sparky_profile')
-      const c = localStorage.getItem('sparky_credentials')
-      if (p) setProfile(JSON.parse(p))
-      if (c) setCredentials(JSON.parse(c))
-    } catch {}
-    setLoaded(true)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUserId(session.user.id)
+        loadUserData(session.user.id)
+      }
+      setLoaded(true)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id)
+        loadUserData(session.user.id)
+      } else {
+        setUserId(null)
+        setProfile(null)
+      }
+    })
+    return () => subscription.unsubscribe()
   }, [])
 
-  // Save profile
-  useEffect(() => {
-    if (!loaded) return
-    if (profile) localStorage.setItem('sparky_profile', JSON.stringify(profile))
-  }, [profile, loaded])
+  async function loadUserData(uid: string) {
+    const { data: prof } = await supabase
+      .from('profiles').select('*').eq('id', uid).single()
+    if (prof) {
+      setProfile({
+        name: prof.name, role: prof.role, yearsExp: prof.years_exp,
+        workType: prof.work_type, licenseNumber: prof.license_number || '',
+        licenseState: prof.license_state || 'CA'
+      })
+    }
+    const { data: creds } = await supabase
+      .from('credentials').select('*').eq('user_id', uid).order('created_at')
+    if (creds && creds.length > 0) {
+      setCredentials(creds.map(c => ({
+        id: c.id, name: c.name, issueDate: c.issue_date || '',
+        expiryDate: c.expiry_date || '', category: c.issuer || 'Other'
+      })))
+    }
+  }
 
-  // Save credentials
-  useEffect(() => {
-    if (!loaded) return
-    localStorage.setItem('sparky_credentials', JSON.stringify(credentials))
-  }, [credentials, loaded])
+  async function saveProfile(p: UserProfile) {
+    if (!userId) return
+    await supabase.from('profiles').upsert({
+      id: userId, name: p.name, role: p.role, years_exp: p.yearsExp,
+      work_type: p.workType, license_number: p.licenseNumber, license_state: p.licenseState
+    })
+    setProfile(p)
+  }
+
+  async function saveCred(saved: Credential) {
+    if (!userId) return
+    const isNew = !credentials.find(c => c.id === saved.id)
+    if (isNew) {
+      const { data } = await supabase.from('credentials').insert({
+        user_id: userId, name: saved.name, issuer: saved.category,
+        issue_date: saved.issueDate || null, expiry_date: saved.expiryDate || null
+      }).select().single()
+      if (data) setCredentials(prev => [...prev, { ...saved, id: data.id }])
+    } else {
+      await supabase.from('credentials').update({
+        name: saved.name, issuer: saved.category,
+        issue_date: saved.issueDate || null, expiry_date: saved.expiryDate || null
+      }).eq('id', saved.id)
+      setCredentials(prev => prev.map(c => c.id === saved.id ? saved : c))
+    }
+  }
+
+  async function deleteCred(id: string) {
+    await supabase.from('credentials').delete().eq('id', id)
+    setCredentials(prev => prev.filter(c => c.id !== id))
+  }
 
   if (!loaded) return null
 
-  if (!profile) {
-    return <OnboardingScreen onComplete={p => setProfile(p)} />
+  if (!userId) {
+    return <AuthScreen onAuth={() => {}} />
   }
 
-  // Expiring soon alerts
+  if (!profile) {
+    return <OnboardingScreen onComplete={p => saveProfile(p)} />
+  }
+
   const alerts = credentials.filter(c => {
     const d = daysUntilExpiry(c.expiryDate)
     return d !== null && d < 60
@@ -442,7 +530,6 @@ export function HomeTab() {
             <Plus className="h-3 w-3" /> Add
           </button>
         </div>
-
         {credentials.length === 0 ? (
           <div className="border border-dashed border-[#2a2a35] p-6 text-center">
             <p className="text-[11px] text-[#444]">No credentials added yet</p>
@@ -453,7 +540,7 @@ export function HomeTab() {
             {credentials.map(c => (
               <CredentialCard key={c.id} cred={c}
                 onEdit={setEditingCred}
-                onDelete={id => setCredentials(prev => prev.filter(c => c.id !== id))} />
+                onDelete={deleteCred} />
             ))}
           </div>
         )}
@@ -464,10 +551,10 @@ export function HomeTab() {
         <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#888] mb-3">Quick Actions</h2>
         <div className="grid grid-cols-2 gap-2">
           {[
-            { label: 'Ask Sparky', desc: 'Get a code answer', color: '#ff6b00', tab: 'sparky' },
-            { label: 'Calculators', desc: 'Run a quick calc', color: '#00d4ff', tab: 'tools' },
-            { label: 'NEC Code', desc: 'Look up an article', color: '#00ff88', tab: 'reference' },
-            { label: 'Inspect', desc: 'Common failures', color: '#ff4444', tab: 'reference' },
+            { label: 'Ask Sparky', desc: 'Get a code answer', color: '#ff6b00' },
+            { label: 'Calculators', desc: 'Run a quick calc', color: '#00d4ff' },
+            { label: 'NEC Code', desc: 'Look up an article', color: '#00ff88' },
+            { label: 'Inspect', desc: 'Common failures', color: '#ff4444' },
           ].map(a => (
             <div key={a.label}
               className="border border-[#2a2a35] bg-[#111] p-3 flex flex-col gap-1 cursor-pointer hover:border-[#333] transition-colors active:scale-[0.98]"
@@ -483,13 +570,7 @@ export function HomeTab() {
       {editingCred && (
         <EditCredentialModal
           cred={editingCred}
-          onSave={saved => {
-            setCredentials(prev => {
-              const exists = prev.find(c => c.id === saved.id)
-              return exists ? prev.map(c => c.id === saved.id ? saved : c) : [...prev, saved]
-            })
-            setEditingCred(null)
-          }}
+          onSave={saved => { saveCred(saved); setEditingCred(null) }}
           onClose={() => setEditingCred(null)}
         />
       )}
@@ -503,7 +584,6 @@ export function HomeTab() {
               <span className="text-sm font-bold uppercase tracking-wider text-[#f0f0f0]">Edit Profile</span>
               <button onClick={() => setShowEditProfile(false)}><X className="h-4 w-4 text-[#555]" /></button>
             </div>
-
             {[
               { label: 'Name', value: profile.name, key: 'name', type: 'text' },
               { label: 'Years Experience', value: String(profile.yearsExp), key: 'yearsExp', type: 'number' },
@@ -514,13 +594,11 @@ export function HomeTab() {
                 <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">{f.label}</label>
                 <input
                   className="w-full bg-[#0a0b0e] border border-[#2a2a35] px-3 py-2.5 text-sm text-[#f0f0f0] focus:border-[#ff6b00] focus:outline-none"
-                  type={f.type}
-                  value={f.value}
+                  type={f.type} value={f.value}
                   onChange={e => setProfile(prev => prev ? { ...prev, [f.key]: f.type === 'number' ? parseInt(e.target.value) || 0 : e.target.value } : prev)}
                 />
               </div>
             ))}
-
             <div>
               <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-1.5">Role</label>
               <select
@@ -530,7 +608,6 @@ export function HomeTab() {
                 {ROLE_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
-
             <div>
               <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-2">Work Type</label>
               <div className="grid grid-cols-2 gap-2">
@@ -543,8 +620,7 @@ export function HomeTab() {
                 ))}
               </div>
             </div>
-
-            <button onClick={() => setShowEditProfile(false)}
+            <button onClick={() => { saveProfile(profile); setShowEditProfile(false) }}
               className="w-full py-3 bg-[#ff6b00] text-[#0f1115] text-sm font-bold uppercase tracking-wider mt-2">
               Save Profile
             </button>
