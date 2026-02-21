@@ -1,21 +1,20 @@
 'use client'
-
-import { Zap, BookOpen, Calculator, MessageCircle, Grid3X3 } from 'lucide-react'
+import { Home, Wrench, BookOpen, MessageCircle, MoreHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export type TabId = 'tools' | 'code' | 'calcs' | 'symbols' | 'sparky'
+export type TabId = 'home' | 'tools' | 'reference' | 'sparky' | 'more'
 
 interface BottomNavProps {
   activeTab: TabId
   onTabChange: (tab: TabId) => void
 }
 
-const tabs: { id: TabId; label: string; icon: typeof Zap; accentColor: string; activeColor: string }[] = [
-  { id: 'tools', label: 'Tools', icon: Zap, accentColor: 'text-[#ff6b00]', activeColor: '#ff6b00' },
-  { id: 'code', label: 'Code', icon: BookOpen, accentColor: 'text-[#00ff88]', activeColor: '#00ff88' },
-  { id: 'calcs', label: 'Calcs', icon: Calculator, accentColor: 'text-[#00d4ff]', activeColor: '#00d4ff' },
-  { id: 'symbols', label: 'Symbols', icon: Grid3X3, accentColor: 'text-[#ffaa00]', activeColor: '#ffaa00' },
-  { id: 'sparky', label: 'Ask AI', icon: MessageCircle, accentColor: 'text-[#ff6b00]', activeColor: '#ff6b00' },
+const tabs: { id: TabId; label: string; icon: typeof Home; accentColor: string; activeColor: string }[] = [
+  { id: 'home',      label: 'Home',        icon: Home,          accentColor: 'text-[#ff6b00]', activeColor: '#ff6b00' },
+  { id: 'tools',     label: 'Tools',       icon: Wrench,        accentColor: 'text-[#00d4ff]', activeColor: '#00d4ff' },
+  { id: 'reference', label: 'Reference',   icon: BookOpen,      accentColor: 'text-[#00ff88]', activeColor: '#00ff88' },
+  { id: 'sparky',    label: 'Ask Sparky',  icon: MessageCircle, accentColor: 'text-[#ff6b00]', activeColor: '#ff6b00' },
+  { id: 'more',      label: 'More',        icon: MoreHorizontal,accentColor: 'text-[#888]',    activeColor: '#888888' },
 ]
 
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
