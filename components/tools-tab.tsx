@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { getRecentCalculations, type SavedCalculation } from '@/lib/storage'
 import { getTipOfTheDay, type SparkTip } from '@/lib/tips'
+import { recordToolOpen } from '@/lib/usage'
 import { CalculatorModal } from '@/components/tools/calculator-modal'
 import { VoltageDropCalculator } from '@/components/tools/voltage-drop'
 import { ConduitFillCalculator } from '@/components/tools/conduit-fill'
@@ -198,7 +199,11 @@ function ConstructionCalculator() {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export function ToolsTab() {
+interface ToolsTabProps {
+  initialToolId?: string | null
+}
+
+export function ToolsTab({ initialToolId }: ToolsTabProps) {
   const [activeCalc, setActiveCalc] = useState<CalculatorId>(null)
   const [recentCalcs, setRecentCalcs] = useState<SavedCalculation[]>([])
   const [tip, setTip] = useState<SparkTip | null>(null)
@@ -208,9 +213,21 @@ export function ToolsTab() {
     setTip(getTipOfTheDay())
   }, [])
 
+  // Support deep-linking from Home tab Quick Actions
+  useEffect(() => {
+    if (initialToolId && CALCULATORS.find(c => c.id === initialToolId)) {
+      openCalc(initialToolId as CalculatorId)
+    }
+  }, [initialToolId])
+
   useEffect(() => {
     if (activeCalc === null) setRecentCalcs(getRecentCalculations(5))
   }, [activeCalc])
+
+  function openCalc(id: CalculatorId) {
+    if (id) recordToolOpen(id)
+    setActiveCalc(id)
+  }
 
   function renderCalculator() {
     switch (activeCalc) {
@@ -259,7 +276,7 @@ export function ToolsTab() {
           {CALCULATORS.slice(0, 4).map(calc => {
             const Icon = calc.icon
             return (
-              <button key={calc.id} onClick={() => setActiveCalc(calc.id)}
+              <button key={calc.id} onClick={() => openCalc(calc.id)}
                 className="group flex flex-col gap-2 border border-[#333] bg-[#111] p-4 text-left transition-all duration-200 hover:border-[#555] active:scale-[0.98]">
                 <Icon className="h-5 w-5" style={{ color: calc.color }} />
                 <div>
@@ -279,7 +296,7 @@ export function ToolsTab() {
           {CALCULATORS.slice(4).map(calc => {
             const Icon = calc.icon
             return (
-              <button key={calc.id} onClick={() => setActiveCalc(calc.id)}
+              <button key={calc.id} onClick={() => openCalc(calc.id)}
                 className="flex items-center gap-3 border border-[#333] bg-[#111] p-3 text-left transition-all duration-200 hover:border-[#555] active:scale-[0.99]">
                 <Icon className="h-4 w-4 shrink-0" style={{ color: calc.color }} />
                 <div className="flex-1">
