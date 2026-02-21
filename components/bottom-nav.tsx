@@ -1,6 +1,6 @@
 'use client'
-import { Zap, BookOpen, Calculator, MessageCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Zap, BookOpen, Calculator, MessageCircle, Grid3X3 } from 'lucide-react'
+  import { cn } from '@/lib/utils'
 
 export type TabId = 'tools' | 'code' | 'calcs' | 'symbols' | 'sparky
 
