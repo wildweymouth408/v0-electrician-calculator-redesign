@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { getRecentCalculations, type SavedCalculation } from '@/lib/storage'
-import { getTipOfTheDay, type SparkTip } from '@/lib/tips'
 import { recordToolOpen } from '@/lib/usage'
 import { CalculatorModal } from '@/components/tools/calculator-modal'
 import { VoltageDropCalculator } from '@/components/tools/voltage-drop'
@@ -23,7 +22,6 @@ import {
   Settings,
   HardHat,
   Clock,
-  Lightbulb,
   ChevronRight,
 } from 'lucide-react'
 
@@ -206,11 +204,9 @@ interface ToolsTabProps {
 export function ToolsTab({ initialToolId }: ToolsTabProps) {
   const [activeCalc, setActiveCalc] = useState<CalculatorId>(null)
   const [recentCalcs, setRecentCalcs] = useState<SavedCalculation[]>([])
-  const [tip, setTip] = useState<SparkTip | null>(null)
 
   useEffect(() => {
     setRecentCalcs(getRecentCalculations(5))
-    setTip(getTipOfTheDay())
   }, [])
 
   // Support deep-linking from Home tab Quick Actions
@@ -246,29 +242,8 @@ export function ToolsTab({ initialToolId }: ToolsTabProps) {
 
   const getCalcTitle = () => CALCULATORS.find(c => c.id === activeCalc)?.label || ''
 
-  const categoryColors: Record<string, string> = {
-    safety: '#ff3333', code: '#00d4ff', technique: '#00ff88', tool: '#ffaa00',
-  }
-
   return (
     <div className="flex flex-col gap-5">
-      {/* Tip of the Day */}
-      {tip && (
-        <div className="relative overflow-hidden border border-[#333] bg-[#111]">
-          <div className="absolute left-0 top-0 h-full w-1" style={{ backgroundColor: categoryColors[tip.category] || '#ff6b00' }} />
-          <div className="p-3 pl-4">
-            <div className="mb-1 flex items-center gap-2">
-              <Lightbulb className="h-3.5 w-3.5 text-[#ffaa00]" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#ffaa00]">Sparky's Tip</span>
-              <span className="text-[10px] uppercase tracking-wider text-[#555]">{tip.category}</span>
-            </div>
-            <p className="text-xs font-medium leading-relaxed text-[#ccc]">{tip.title}</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-[#888]">{tip.body}</p>
-            {tip.reference && <span className="mt-1 inline-block font-mono text-[10px] text-[#555]">{tip.reference}</span>}
-          </div>
-        </div>
-      )}
-
       {/* Primary calculators grid */}
       <div>
         <h2 className="mb-3 text-[11px] font-bold uppercase tracking-wider text-[#888]">Calculators</h2>
