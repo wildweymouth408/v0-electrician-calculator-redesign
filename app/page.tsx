@@ -16,11 +16,23 @@ function MoreTab() {
 
 export default function SparkyApp() {
   const [activeTab, setActiveTab] = useState<TabId>('home')
+  const [pendingToolId, setPendingToolId] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Called by HomeTab Quick Actions
+  function handleNavigate(tab: TabId, toolId?: string) {
+    if (toolId) setPendingToolId(toolId)
+    setActiveTab(tab)
+  }
+
+  // Clear pending tool after Tools tab picks it up
+  function handleToolConsumed() {
+    setPendingToolId(null)
+  }
 
   if (!mounted) {
     return (
@@ -76,13 +88,21 @@ export default function SparkyApp() {
           />
         </div>
       </header>
+
       <main className="flex-1 overflow-y-auto px-4 py-4 pb-24">
-        {activeTab === 'home'      && <HomeTab />}
-        {activeTab === 'tools'     && <ToolsTab />}
+        {activeTab === 'home'      && <HomeTab onNavigate={handleNavigate} />}
+        {activeTab === 'tools'     && (
+          <ToolsTab
+            initialToolId={pendingToolId}
+            key={pendingToolId ?? 'tools'}
+            onToolConsumed={handleToolConsumed}
+          />
+        )}
         {activeTab === 'reference' && <ReferenceTab />}
         {activeTab === 'sparky'    && <AskSparkyTab />}
         {activeTab === 'more'      && <MoreTab />}
       </main>
+
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   )
