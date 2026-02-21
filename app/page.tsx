@@ -5,7 +5,6 @@ import { ToolsTab } from '@/components/tools-tab'
 import { ReferenceTab } from '@/components/reference-tab'
 import { AskSparkyTab } from '@/components/ask-sparky-tab'
 import { HomeTab } from '@/components/home-tab'
-
 function HomeTab() {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-3 text-[#555]">
