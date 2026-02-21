@@ -6,6 +6,10 @@ import { ReferenceTab } from '@/components/reference-tab'
 import { AskSparkyTab } from '@/components/ask-sparky-tab'
 import { HomeTab } from '@/components/home-tab'
 
+function MoreTab() {
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-3 text-[#555]">
+      <span className="text-sm uppercase tracking-widest">More — Coming Soon</span>
     </div>
   )
 }
@@ -72,7 +76,6 @@ export default function SparkyApp() {
           />
         </div>
       </header>
-
       <main className="flex-1 overflow-y-auto px-4 py-4 pb-24">
         {activeTab === 'home'      && <HomeTab />}
         {activeTab === 'tools'     && <ToolsTab />}
@@ -80,7 +83,6 @@ export default function SparkyApp() {
         {activeTab === 'sparky'    && <AskSparkyTab />}
         {activeTab === 'more'      && <MoreTab />}
       </main>
-
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   )
