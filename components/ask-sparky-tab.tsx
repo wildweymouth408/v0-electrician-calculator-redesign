@@ -1,107 +1,123 @@
 'use client'
+import { useState, useRef, useEffect } from 'react'
+import { Send, Zap } from 'lucide-react'
 
-import { useState, useEffect } from 'react'
-import { BottomNav, type TabId } from '@/components/bottom-nav'
-import { ToolsTab } from '@/components/tools-tab'
-import { JobsTab } from '@/components/jobs-tab'
-import { CodeTab } from '@/components/code-tab'
-import { AskSparkyTab } from '@/components/ask-sparky-tab'
-import { MoreTab } from '@/components/more-tab'
-import { getSettings, type UserRole } from '@/lib/storage'
+interface Message {
+  role: 'user' | 'assistant'
+  content: string
+}
 
-
-export default function SparkyApp() {
-  const [activeTab, setActiveTab] = useState<TabId>('tools')
-  const [mounted, setMounted] = useState(false)
+export function AskSparkyTab() {
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      role: 'assistant',
+      content: "What's your electrical question? I know the NEC inside and out and I'll give you a straight answer.",
+    },
+  ])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setMounted(true)
-    // Set default tab based on user role
-    const settings = getSettings()
-    if (settings.role === 'foreman') {
-      setActiveTab('jobs')
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  async function sendMessage() {
+    const text = input.trim()
+    if (!text || loading) return
+
+    const userMessage: Message = { role: 'user', content: text }
+    setMessages(prev => [...prev, userMessage])
+    setInput('')
+    setLoading(true)
+
+    try {
+      const response = await fetch('/api/ask-sparky', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [...messages, userMessage],
+        }),
+      })
+
+      const data = await response.json()
+      setMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: data.reply },
+      ])
+    } catch {
+      setMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: 'Something went wrong. Check your connection and try again.' },
+      ])
+    } finally {
+      setLoading(false)
     }
-  }, [])
-
-  function handleRoleChange(role: UserRole) {
-    if (role === 'foreman') {
-      setActiveTab('jobs')
-    } else {
-      setActiveTab('tools')
-    }
-  }
-
-  if (!mounted) {
-    return (
-      <div className="flex h-dvh items-center justify-center bg-[#0f1115]">
-        <div className="flex flex-col items-center gap-3">
-          <svg viewBox="0 0 24 24" className="h-8 w-8 text-[#ff6b00]" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-          </svg>
-          <span className="text-xs uppercase tracking-widest text-[#555]">Loading...</span>
-        </div>
-      </div>
-    )
-  }
-
-  // Tab accent colors for the top bar
-  const tabAccentColor: Record<TabId, string> = {
-    tools: '#ff6b00',
-    jobs: '#00d4ff',
-    code: '#00ff88',
-    sparky: '#ff6b00',
-    more: '#888',
-  }
-
-  const tabTitle: Record<TabId, string> = {
-    tools: 'Tools',
-    jobs: 'Jobs',
-    code: 'NEC Code',
-    sparky: 'Ask Sparky',
-    more: 'More',
   }
 
   return (
-    <div className="flex h-dvh flex-col bg-[#0f1115] text-[#f0f0f0]">
-      {/* Top header */}
-      <header className="flex items-center justify-between border-b border-[#333] bg-[#0f1115] px-4 py-3">
-        <div className="flex items-center gap-2.5">
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5"
-            style={{ color: tabAccentColor[activeTab] }}>
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-          </svg>
-          <span className="text-sm font-bold uppercase tracking-wider" style={{ color: tabAccentColor[activeTab] }}>
-            Sparky
-          </span>
-          <span className="text-[10px] font-medium uppercase tracking-wider text-[#555]">
-            / {tabTitle[activeTab]}
-          </span>
-        </div>
-
-        {/* Electron flow animation in header */}
-        <div className="h-1 w-16 overflow-hidden bg-[#222]">
+    <div className="flex flex-col h-full gap-0">
+      {/* Messages */}
+      <div className="flex flex-col gap-3 pb-4">
+        {messages.map((msg, i) => (
           <div
-            className="h-full w-4"
-            style={{
-              backgroundColor: tabAccentColor[activeTab],
-              animation: 'electron-flow 1.5s linear infinite',
-            }}
+            key={i}
+            className={`flex gap-2.5 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+          >
+            {msg.role === 'assistant' && (
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center bg-[#ff6b00] mt-1">
+                <Zap className="h-3.5 w-3.5 text-[#0f1115]" />
+              </div>
+            )}
+            <div
+              className={`max-w-[82%] px-3 py-2.5 text-sm leading-relaxed ${
+                msg.role === 'user'
+                  ? 'bg-[#1a1f2e] text-[#f0f0f0] border border-[#333]'
+                  : 'bg-[#111] text-[#e0e0e0] border border-[#2a2a2a]'
+              }`}
+            >
+              {msg.content}
+            </div>
+          </div>
+        ))}
+
+        {loading && (
+          <div className="flex gap-2.5">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center bg-[#ff6b00] mt-1">
+              <Zap className="h-3.5 w-3.5 text-[#0f1115]" />
+            </div>
+            <div className="bg-[#111] border border-[#2a2a2a] px-3 py-2.5">
+              <div className="flex gap-1 items-center h-5">
+                <span className="w-1.5 h-1.5 bg-[#ff6b00] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 bg-[#ff6b00] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 bg-[#ff6b00] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input - fixed at bottom */}
+      <div className="fixed bottom-16 left-0 right-0 border-t border-[#333] bg-[#0f1115] px-4 py-3">
+        <div className="flex gap-2 max-w-2xl mx-auto">
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+            placeholder="Ask an electrical question..."
+            className="flex-1 h-11 border border-[#333] bg-[#111] px-3 text-sm text-[#f0f0f0] placeholder-[#555] focus:border-[#ff6b00] focus:outline-none"
+            disabled={loading}
           />
+          <button
+            onClick={sendMessage}
+            disabled={loading || !input.trim()}
+            className="flex h-11 w-11 items-center justify-center bg-[#ff6b00] text-[#0f1115] disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+          >
+            <Send className="h-4 w-4" />
+          </button>
         </div>
-      </header>
-
-      {/* Content area */}
-      <main className="flex-1 overflow-y-auto px-4 py-4 pb-24">
-        {activeTab === 'tools' && <ToolsTab />}
-        {activeTab === 'jobs' && <JobsTab />}
-        {activeTab === 'code' && <CodeTab />}
-        {activeTab === 'sparky' && <AskSparkyTab />}
-        {activeTab === 'more' && <MoreTab onRoleChange={handleRoleChange} />}
-      </main>
-
-      {/* Bottom navigation */}
-      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+      </div>
     </div>
   )
 }
-
