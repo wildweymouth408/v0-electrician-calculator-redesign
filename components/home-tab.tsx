@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react'
 import {
   Zap, User, Award, AlertTriangle, ChevronRight,
-  Plus, Trash2, Calendar, Shield, Clock, Lightbulb, Edit2, Check, X
+  Plus, Trash2, Calendar, Shield, Clock, Lightbulb, Edit2, Check, X,
+  Calculator, BookOpen, MessageSquare, Cylinder, Triangle, Ruler, Cable, Gauge, Box, Settings, HardHat
 } from 'lucide-react'
 import { getTipOfTheDay } from '@/lib/tips'
+import { getTopTools, hasUsageData } from '@/lib/usage'
 import { supabase } from '@/lib/supabase'
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
@@ -27,6 +29,12 @@ interface Credential {
   category: string
 }
 
+type TabId = 'home' | 'tools' | 'reference' | 'sparky' | 'more'
+
+interface HomeTabProps {
+  onNavigate?: (tab: TabId, toolId?: string) => void
+}
+
 const ROLE_OPTIONS = [
   'Apprentice - Year 1','Apprentice - Year 2','Apprentice - Year 3',
   'Apprentice - Year 4','Apprentice - Year 5','Journeyman','Foreman',
@@ -40,6 +48,28 @@ const CREDENTIAL_CATEGORIES = ['License','OSHA','Safety','Manufacturer','First A
 const DEFAULT_CREDENTIALS: Credential[] = [
   { id: '1', name: 'State Electrical License', issueDate: '', expiryDate: '', category: 'License' },
   { id: '2', name: 'OSHA 10', issueDate: '', expiryDate: '', category: 'OSHA' },
+]
+
+// ─── TOOL DEFINITIONS (mirrors Tools tab) ────────────────────────────────────
+
+const ALL_TOOLS = [
+  { id: 'voltage-drop',  label: 'Voltage Drop',  desc: 'V, A, length, wire',      icon: Zap,       color: '#ff6b00', tab: 'tools' as TabId },
+  { id: 'conduit-fill',  label: 'Conduit Fill',  desc: 'Type, size, wire count',   icon: Cylinder,  color: '#00d4ff', tab: 'tools' as TabId },
+  { id: 'ohms-law',      label: "Ohm's Law",     desc: 'V, I, R triangle',         icon: Triangle,  color: '#ffaa00', tab: 'tools' as TabId },
+  { id: 'pipe-bending',  label: 'Pipe Bending',  desc: 'Offsets, 90s, saddles',    icon: Ruler,     color: '#ff6b00', tab: 'tools' as TabId },
+  { id: 'wire-sizing',   label: 'Wire Sizing',   desc: 'Load, distance, NEC',      icon: Cable,     color: '#00ff88', tab: 'tools' as TabId },
+  { id: 'ampacity',      label: 'Ampacity',      desc: 'Derating & correction',    icon: Gauge,     color: '#00d4ff', tab: 'tools' as TabId },
+  { id: 'box-fill',      label: 'Box Fill',      desc: 'NEC 314.16 volumes',       icon: Box,       color: '#ffaa00', tab: 'tools' as TabId },
+  { id: 'motor-fla',     label: 'Motor FLA',     desc: '430.248/250 tables',       icon: Settings,  color: '#00d4ff', tab: 'tools' as TabId },
+  { id: 'construction',  label: 'Construction',  desc: 'Fractions, feet & inches', icon: HardHat,   color: '#ffaa00', tab: 'tools' as TabId },
+]
+
+// Fallback quick actions shown before any usage data exists
+const DEFAULT_QUICK_ACTIONS = [
+  { id: 'sparky-chat',  label: 'Ask Sparky',   desc: 'Get a code answer fast', icon: MessageSquare, color: '#ff6b00', tab: 'sparky'     as TabId },
+  { id: 'voltage-drop', label: 'Voltage Drop', desc: 'Most-used calculator',   icon: Zap,           color: '#00d4ff', tab: 'tools'      as TabId },
+  { id: 'nec-ref',      label: 'NEC Reference',desc: 'Look up an article',     icon: BookOpen,      color: '#00ff88', tab: 'reference'  as TabId },
+  { id: 'box-fill',     label: 'Box Fill',     desc: 'NEC 314.16 volumes',     icon: Box,           color: '#ffaa00', tab: 'tools'      as TabId },
 ]
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -348,14 +378,35 @@ function EditCredentialModal({ cred, onSave, onClose }: {
 
 // ─── MAIN HOME TAB ────────────────────────────────────────────────────────────
 
-export function HomeTab() {
+export function HomeTab({ onNavigate }: HomeTabProps) {
   const [userId, setUserId] = useState<string | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [credentials, setCredentials] = useState<Credential[]>(DEFAULT_CREDENTIALS)
   const [editingCred, setEditingCred] = useState<Credential | null>(null)
   const [showEditProfile, setShowEditProfile] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const [quickActions, setQuickActions] = useState(DEFAULT_QUICK_ACTIONS)
   const tip = getTipOfTheDay()
+
+  // Build quick actions from usage data
+  useEffect(() => {
+    if (hasUsageData()) {
+      const topIds = getTopTools(4)
+      const topTools = topIds
+        .map(id => ALL_TOOLS.find(t => t.id === id))
+        .filter(Boolean) as typeof ALL_TOOLS
+
+      // If we have fewer than 4 top tools, fill remaining with defaults that aren't already in the list
+      if (topTools.length < 4) {
+        const extras = ALL_TOOLS
+          .filter(t => !topIds.includes(t.id))
+          .slice(0, 4 - topTools.length)
+        setQuickActions([...topTools, ...extras].slice(0, 4).map(t => ({ ...t, desc: t.desc })))
+      } else {
+        setQuickActions(topTools.slice(0, 4))
+      }
+    }
+  }, [])
 
   // Check auth on mount
   useEffect(() => {
@@ -517,6 +568,35 @@ export function HomeTab() {
         </div>
       )}
 
+      {/* Quick actions */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#888]">
+            {hasUsageData() ? 'Your Top Tools' : 'Quick Actions'}
+          </h2>
+          {hasUsageData() && (
+            <span className="text-[9px] text-[#444] uppercase tracking-wider">Based on your usage</span>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {quickActions.map(action => {
+            const Icon = action.icon
+            return (
+              <button
+                key={action.id}
+                onClick={() => onNavigate?.(action.tab, action.id !== 'sparky-chat' && action.id !== 'nec-ref' ? action.id : undefined)}
+                className="border border-[#2a2a35] bg-[#111] p-3 flex flex-col gap-1.5 text-left transition-colors hover:border-[#333] active:scale-[0.98]"
+                style={{ borderLeftColor: action.color, borderLeftWidth: 3 }}
+              >
+                <Icon className="h-4 w-4" style={{ color: action.color }} />
+                <span className="text-xs font-bold text-[#f0f0f0]">{action.label}</span>
+                <span className="text-[10px] text-[#555]">{action.desc}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       {/* Credentials wallet */}
       <div>
         <div className="flex items-center justify-between mb-3">
@@ -544,26 +624,6 @@ export function HomeTab() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* Quick actions */}
-      <div>
-        <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#888] mb-3">Quick Actions</h2>
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            { label: 'Ask Sparky', desc: 'Get a code answer', color: '#ff6b00' },
-            { label: 'Calculators', desc: 'Run a quick calc', color: '#00d4ff' },
-            { label: 'NEC Code', desc: 'Look up an article', color: '#00ff88' },
-            { label: 'Inspect', desc: 'Common failures', color: '#ff4444' },
-          ].map(a => (
-            <div key={a.label}
-              className="border border-[#2a2a35] bg-[#111] p-3 flex flex-col gap-1 cursor-pointer hover:border-[#333] transition-colors active:scale-[0.98]"
-              style={{ borderLeftColor: a.color, borderLeftWidth: 3 }}>
-              <span className="text-xs font-bold text-[#f0f0f0]">{a.label}</span>
-              <span className="text-[10px] text-[#555]">{a.desc}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Edit credential modal */}
