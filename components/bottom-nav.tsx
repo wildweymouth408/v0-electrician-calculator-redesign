@@ -1,20 +1,20 @@
 'use client'
-
-import { Zap, ClipboardList, BookOpen, Menu } from 'lucide-react'
+import { Zap, ClipboardList, BookOpen, Menu, MessageCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export type TabId = 'tools' | 'jobs' | 'code' | 'more'
+export type TabId = 'tools' | 'jobs' | 'code' | 'sparky' | 'more'
 
 interface BottomNavProps {
   activeTab: TabId
   onTabChange: (tab: TabId) => void
 }
 
-const tabs: { id: TabId; label: string; icon: typeof Zap; accentColor: string }[] = [
-  { id: 'tools', label: 'Tools', icon: Zap, accentColor: 'text-[#ff6b00]' },
-  { id: 'jobs', label: 'Jobs', icon: ClipboardList, accentColor: 'text-[#00d4ff]' },
-  { id: 'code', label: 'Code', icon: BookOpen, accentColor: 'text-[#00ff88]' },
-  { id: 'more', label: 'More', icon: Menu, accentColor: 'text-[#888888]' },
+const tabs: { id: TabId; label: string; icon: typeof Zap; accentColor: string; activeColor: string }[] = [
+  { id: 'tools', label: 'Tools', icon: Zap, accentColor: 'text-[#ff6b00]', activeColor: '#ff6b00' },
+  { id: 'jobs', label: 'Jobs', icon: ClipboardList, accentColor: 'text-[#00d4ff]', activeColor: '#00d4ff' },
+  { id: 'code', label: 'Code', icon: BookOpen, accentColor: 'text-[#00ff88]', activeColor: '#00ff88' },
+  { id: 'sparky', label: 'Ask AI', icon: MessageCircle, accentColor: 'text-[#ff6b00]', activeColor: '#ff6b00' },
+  { id: 'more', label: 'More', icon: Menu, accentColor: 'text-[#888888]', activeColor: '#888' },
 ]
 
 export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
@@ -40,16 +40,10 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
               isActive ? tab.accentColor : 'text-[#555]'
             )}
           >
-            {/* Active indicator line */}
             {isActive && (
               <span
                 className="absolute top-0 left-1/2 h-[2px] w-8 -translate-x-1/2 transition-all duration-300"
-                style={{
-                  backgroundColor:
-                    tab.id === 'tools' ? '#ff6b00' :
-                    tab.id === 'jobs' ? '#00d4ff' :
-                    tab.id === 'code' ? '#00ff88' : '#888',
-                }}
+                style={{ backgroundColor: tab.activeColor }}
               />
             )}
             <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 1.5} />
