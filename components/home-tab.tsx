@@ -400,7 +400,7 @@ function EditCredentialModal({ cred, userId, onSave, onClose }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-black/70" onClick={onClose}>
-      <div className="w-full bg-[#0f1115] border-t border-[#2a2a35] p-4 flex flex-col gap-4 max-h-[90vh] overflow-y-auto"
+      <div className="w-full bg-[#0f1115] border-t border-[#2a2a35] p-4 p-8 flex flex-col gap-4 max-h-[85vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <span className="text-sm font-bold uppercase tracking-wider text-[#f0f0f0]">
@@ -440,7 +440,6 @@ function EditCredentialModal({ cred, userId, onSave, onClose }: {
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            capture="environment"
             className="hidden"
             onChange={e => {
               const file = e.target.files?.[0]
