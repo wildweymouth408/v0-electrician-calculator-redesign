@@ -60,6 +60,7 @@ export function MoreTab() {
     const next = !darkMode
     setDarkMode(next)
     localStorage.setItem('sparky_dark_mode', JSON.stringify(next))
+    window.dispatchEvent(new Event('sparky_dark_mode_changed'))
   }
 
   function toggleFieldMode() {
