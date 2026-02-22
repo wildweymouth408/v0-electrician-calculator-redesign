@@ -1,4 +1,5 @@
 // NEC Reference Data Tables for Electrician Calculations
+// Targeting 2023 NEC edition
 
 // Wire Circular Mil Areas (AWG/kcmil)
 export const WIRE_AREAS: Record<string, number> = {
@@ -34,6 +35,7 @@ export const K_FACTOR = {
 }
 
 // NEC Table 310.16 - Ampacities of Insulated Conductors (rated 0-2000V, 60/75/90C)
+// 14, 12, 10 AWG capped per NEC 240.4(D) — all temp columns show max OCPD rating
 export const AMPACITY_TABLE: Record<string, { cu60: number; cu75: number; cu90: number; al60: number; al75: number; al90: number }> = {
   '14': { cu60: 15, cu75: 15, cu90: 15, al60: 0, al75: 0, al90: 0 },
   '12': { cu60: 20, cu75: 20, cu90: 20, al60: 15, al75: 15, al90: 15 },
@@ -53,7 +55,7 @@ export const AMPACITY_TABLE: Record<string, { cu60: number; cu75: number; cu90: 
   '350': { cu60: 260, cu75: 310, cu90: 350, al60: 210, al75: 250, al90: 280 },
   '400': { cu60: 280, cu75: 335, cu90: 380, al60: 225, al75: 270, al90: 305 },
   '500': { cu60: 320, cu75: 380, cu90: 430, al60: 260, al75: 310, al90: 350 },
-  '600': { cu60: 350, cu75: 420, cu90: 475, al60: 285, al75: 340, al90: 385 },
+  '600': { cu60: 355, cu75: 420, cu90: 475, al60: 285, al75: 340, al90: 385 },
   '750': { cu60: 400, cu75: 475, cu90: 535, al60: 320, al75: 385, al90: 435 },
   '1000': { cu60: 455, cu75: 545, cu90: 615, al60: 375, al75: 445, al90: 500 },
 }
@@ -107,7 +109,7 @@ export function getConduitDerating(wireCount: number): number {
   return 0.35
 }
 
-// Wire cross-sectional areas for conduit fill (sq inches) - THHN/THWN insulation
+// Wire cross-sectional areas for conduit fill (sq inches) - NEC Chapter 9 Table 5
 export const WIRE_CROSS_SECTION: Record<string, Record<string, number>> = {
   'THHN': {
     '14': 0.0097, '12': 0.0133, '10': 0.0211, '8': 0.0366,
@@ -132,7 +134,7 @@ export const WIRE_CROSS_SECTION: Record<string, Record<string, number>> = {
   },
 }
 
-// Conduit internal areas (sq inches) by type and trade size
+// Conduit internal areas (sq inches) by type and trade size - NEC Chapter 9 Table 4
 export const CONDUIT_AREAS: Record<string, Record<string, number>> = {
   'EMT': {
     '1/2': 0.304, '3/4': 0.533, '1': 0.864, '1-1/4': 1.496,
@@ -151,7 +153,7 @@ export const CONDUIT_AREAS: Record<string, Record<string, number>> = {
   },
 }
 
-// NEC conduit fill limits
+// NEC conduit fill limits - Chapter 9 Table 1
 export function getConduitFillLimit(wireCount: number): number {
   if (wireCount === 1) return 0.53
   if (wireCount === 2) return 0.31
@@ -169,7 +171,7 @@ export const BOX_FILL_ALLOWANCE: Record<string, number> = {
   '6': 5.00,
 }
 
-// Standard box volumes (cubic inches)
+// Standard box volumes (cubic inches) - NEC Table 314.16(A)
 export const STANDARD_BOXES: Record<string, { description: string; volume: number }> = {
   '4x1.25-sq': { description: '4" Square x 1-1/4" deep', volume: 18.0 },
   '4x1.5-sq': { description: '4" Square x 1-1/2" deep', volume: 21.0 },
