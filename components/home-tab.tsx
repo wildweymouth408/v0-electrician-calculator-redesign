@@ -376,11 +376,11 @@ function EditCredentialModal({ cred, userId, onSave, onClose }: {
       const ext = file.name.split('.').pop() || 'jpg'
       const path = `${userId}/${Date.now()}.${ext}`
       const { error: uploadErr } = await supabase.storage
-        .from('certificates')
+        .from('Certificates')
         .upload(path, file, { upsert: true })
       if (uploadErr) throw uploadErr
       const { data } = supabase.storage
-        .from('certificates')
+        .from('Certificates')
         .getPublicUrl(path)
       setImageUrl(data.publicUrl)
     } catch (e: any) {
