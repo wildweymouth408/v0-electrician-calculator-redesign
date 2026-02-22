@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Send, Zap, Mic, MicOff, Volume2, VolumeX, Loader2 } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -44,15 +45,17 @@ declare global {
   }
 }
 
+const WELCOME_MESSAGE: Message = {
+  role: 'assistant',
+  content: "What's your electrical question? I know the NEC inside and out and I'll give you a straight answer. Tap the mic to speak, or type below.",
+}
+
 export function AskSparkyTab() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content: "What's your electrical question? I know the NEC inside and out and I'll give you a straight answer. Tap the mic to speak, or type below.",
-    },
-  ])
+  const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [historyLoaded, setHistoryLoaded] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
 
   const [isListening, setIsListening] = useState(false)
   const [voiceSupported, setVoiceSupported] = useState(false)
@@ -67,6 +70,62 @@ export function AskSparkyTab() {
 
   const bottomRef = useRef<HTMLDivElement>(null)
 
+  // Load user + conversation history on mount
+  useEffect(() => {
+    async function loadHistory() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { setHistoryLoaded(true); return }
+
+        setUserId(user.id)
+
+        // Fetch last 50 messages ordered oldest first
+        const { data: rows, error } = await supabase
+          .from('conversations')
+          .select('role, content, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50)
+
+        if (error || !rows || rows.length === 0) {
+          setHistoryLoaded(true)
+          return
+        }
+
+        // Reverse so oldest is first
+        const history = rows.reverse() as Message[]
+
+        // Get last message timestamp for summary
+        const lastMsg = rows[rows.length - 1] as typeof rows[0] & { created_at: string }
+        const lastDate = new Date(lastMsg.created_at)
+        const now = new Date()
+        const diffMs = now.getTime() - lastDate.getTime()
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+        const diffDays = Math.floor(diffHours / 24)
+
+        let timeAgo = ''
+        if (diffDays > 1) timeAgo = `${diffDays} days ago`
+        else if (diffDays === 1) timeAgo = 'yesterday'
+        else if (diffHours >= 1) timeAgo = `${diffHours}h ago`
+        else timeAgo = 'recently'
+
+        const summaryMessage: Message = {
+          role: 'assistant',
+          content: `Welcome back! I remember our last ${rows.length} messages (last active ${timeAgo}). Pick up where we left off or ask something new.`,
+        }
+
+        setMessages([summaryMessage, ...history])
+      } catch {
+        // Silently fall back to fresh state
+      } finally {
+        setHistoryLoaded(true)
+      }
+    }
+
+    loadHistory()
+  }, [])
+
+  // Voice setup
   useEffect(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (SR) setVoiceSupported(true)
@@ -162,6 +221,13 @@ export function AskSparkyTab() {
     if (!text || loading) return
 
     const userMessage: Message = { role: 'user', content: text }
+
+    // Only send actual conversation messages to API (skip the summary message)
+    const conversationHistory = messages.filter(m =>
+      !(m.role === 'assistant' && m.content.startsWith('Welcome back!')) &&
+      !(m.role === 'assistant' && m.content.startsWith("What's your electrical"))
+    )
+
     setMessages(prev => [...prev, userMessage])
     setInput('')
     setLoading(true)
@@ -171,15 +237,20 @@ export function AskSparkyTab() {
       const response = await fetch('/api/ask-sparky', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
+        body: JSON.stringify({
+          messages: [...conversationHistory, userMessage],
+          userId,
+        }),
       })
       const data = await response.json()
       const reply = data.reply || 'Something went wrong. Try again.'
       setMessages(prev => [...prev, { role: 'assistant', content: reply }])
-      // Note: no auto-speak here — iOS requires direct user tap to play audio
 
     } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Connection error. Check your signal and try again.' }])
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Connection error. Check your signal and try again.',
+      }])
     } finally {
       setLoading(false)
     }
@@ -220,6 +291,14 @@ export function AskSparkyTab() {
         )}
       </div>
 
+      {/* Loading history indicator */}
+      {!historyLoaded && (
+        <div className="flex items-center gap-2 px-1 mb-2">
+          <Loader2 className="h-3 w-3 animate-spin text-[#ff6b00]" />
+          <span className="text-[10px] text-[#555] uppercase tracking-wider">Loading your history...</span>
+        </div>
+      )}
+
       {/* Messages */}
       <div className="flex flex-col gap-3 pb-4 flex-1 overflow-y-auto">
         {messages.map((msg, i) => (
@@ -236,7 +315,6 @@ export function AskSparkyTab() {
             }`}>
               {msg.content}
 
-              {/* Tap to hear — visible on all assistant messages when voice is on */}
               {msg.role === 'assistant' && speechSupported && speakEnabled && (
                 <button
                   onClick={() => speak(msg.content)}
