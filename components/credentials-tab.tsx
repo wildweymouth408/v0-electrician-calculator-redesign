@@ -201,9 +201,10 @@ export function CredentialsTab() {
         <div className="rounded border border-[#ff6b00]/20 bg-[#13161a] p-4 flex flex-col gap-3">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-bold uppercase tracking-wider text-[#ff6b00]">New Credential</span>
-            <button onClick={() => setShowForm(false)}><X className="h-4 w-4 text-[#555]" /></button>
+            <button onClick={() => setShowForm(false)}>
+              <X className="h-4 w-4 text-[#555]" />
+            </button>
           </div>
-
           <input
             placeholder="Name (e.g. OSHA 30, CA Electrician License)"
             value={form.name}
@@ -242,7 +243,6 @@ export function CredentialsTab() {
               />
             </div>
           </div>
-
           <label className="flex items-center gap-2 rounded border border-dashed border-[#333] bg-[#0d1014] px-3 py-3 cursor-pointer hover:border-[#ff6b00]/30 transition-colors">
             <Upload className="h-4 w-4 text-[#555]" />
             <span className="text-xs text-[#555]">
@@ -255,7 +255,6 @@ export function CredentialsTab() {
               onChange={e => setForm(f => ({ ...f, file: e.target.files?.[0] ?? null }))}
             />
           </label>
-
           <button
             onClick={handleSave}
             disabled={saving || !form.name}
@@ -278,7 +277,6 @@ export function CredentialsTab() {
           {credentials.map(cred => {
             const expired = cred.expiry_date ? isExpired(cred.expiry_date) : false
             const expiringSoon = cred.expiry_date ? isExpiringSoon(cred.expiry_date) : false
-
             return (
               <div
                 key={cred.id}
@@ -302,7 +300,6 @@ export function CredentialsTab() {
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-
                 <div className="flex gap-4">
                   {cred.issue_date && (
                     <div className="flex flex-col gap-0.5">
@@ -321,7 +318,6 @@ export function CredentialsTab() {
                     </div>
                   )}
                 </div>
-
                 {cred.license_number && (
                   <div className="flex items-center gap-2">
                     <div className="flex flex-col gap-0.5 flex-1 min-w-0">
@@ -338,7 +334,6 @@ export function CredentialsTab() {
                     </button>
                   </div>
                 )}
-
                 {cred.imageUrl && (
                   
                     href={cred.imageUrl}
@@ -355,7 +350,6 @@ export function CredentialsTab() {
           })}
         </div>
       )}
-
       <div className="pb-4" />
     </div>
   )
