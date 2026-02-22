@@ -2,6 +2,7 @@
 @import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant field-mode (&:is(.field-mode *));
 
 :root {
   /* Sparky Dark Industrial Palette - forced dark only */
