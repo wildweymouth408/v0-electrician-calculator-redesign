@@ -5,9 +5,9 @@ import { LogOut, Bell, Sun, Moon, Zap, User, ChevronRight, Info } from 'lucide-r
 import { supabase } from '@/lib/supabase'
 
 interface Profile {
-  full_name?: string
+  name?: string
   role?: string
-  experience_years?: number
+  years_exp?: number
   email?: string
 }
 
@@ -27,7 +27,7 @@ export function MoreTab() {
 
       const { data } = await supabase
         .from('profiles')
-        .select('full_name, role, experience_years')
+        .select('name, role, years_exp')
         .eq('id', user.id)
         .single()
 
@@ -61,9 +61,9 @@ export function MoreTab() {
     // Note: full dark/light mode theming can be wired to ThemeProvider in a future pass
   }
 
-  const displayName = profile?.full_name || email?.split('@')[0] || 'Electrician'
+  const displayName = profile?.name || email?.split('@')[0] || 'Electrician'
   const roleLabel = profile?.role
-    ? `${profile.role}${profile.experience_years ? ` · ${profile.experience_years} yrs` : ''}`
+    ? `${profile.role}${profile.years_exp ? ` · ${profile.years_exp} yrs` : ''}`
     : null
 
   return (
