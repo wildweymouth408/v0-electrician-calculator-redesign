@@ -56,6 +56,7 @@ export function AskSparkyTab() {
   const [loading, setLoading] = useState(false)
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const [fieldMode, setFieldMode] = useState(false)
 
   const [isListening, setIsListening] = useState(false)
   const [voiceSupported, setVoiceSupported] = useState(false)
@@ -70,6 +71,18 @@ export function AskSparkyTab() {
 
   const bottomRef = useRef<HTMLDivElement>(null)
 
+  // Field mode
+  useEffect(() => {
+    const saved = localStorage.getItem('sparky_field_mode')
+    if (saved !== null) setFieldMode(JSON.parse(saved))
+    function handleChange() {
+      const updated = localStorage.getItem('sparky_field_mode')
+      if (updated !== null) setFieldMode(JSON.parse(updated))
+    }
+    window.addEventListener('sparky_field_mode_changed', handleChange)
+    return () => window.removeEventListener('sparky_field_mode_changed', handleChange)
+  }, [])
+
   // Load user + conversation history on mount
   useEffect(() => {
     async function loadHistory() {
@@ -79,7 +92,6 @@ export function AskSparkyTab() {
 
         setUserId(user.id)
 
-        // Fetch last 50 messages ordered oldest first
         const { data: rows, error } = await supabase
           .from('conversations')
           .select('role, content, created_at')
@@ -92,10 +104,8 @@ export function AskSparkyTab() {
           return
         }
 
-        // Reverse so oldest is first
         const history = rows.reverse() as Message[]
 
-        // Get last message timestamp for summary
         const lastMsg = rows[rows.length - 1] as typeof rows[0] & { created_at: string }
         const lastDate = new Date(lastMsg.created_at)
         const now = new Date()
@@ -222,7 +232,6 @@ export function AskSparkyTab() {
 
     const userMessage: Message = { role: 'user', content: text }
 
-    // Only send actual conversation messages to API (skip the summary message)
     const conversationHistory = messages.filter(m =>
       !(m.role === 'assistant' && m.content.startsWith('Welcome back!')) &&
       !(m.role === 'assistant' && m.content.startsWith("What's your electrical"))
@@ -263,12 +272,24 @@ export function AskSparkyTab() {
     }
   }
 
+  // Field mode style tokens
+  const fm = {
+    topBar:     fieldMode ? 'text-yellow-400/60'                              : 'text-[#555]',
+    voiceBtn:   fieldMode ? 'border-yellow-400/30 text-yellow-400/60'         : 'border-[#333] text-[#555]',
+    userBubble: fieldMode ? 'bg-black text-yellow-100 border border-yellow-400/30' : 'bg-[#1a1f2e] text-[#f0f0f0] border border-[#333]',
+    botBubble:  fieldMode ? 'bg-black text-yellow-100 border border-yellow-400/20' : 'bg-[#111] text-[#e0e0e0] border border-[#2a2a2a]',
+    inputBar:   fieldMode ? 'border-t border-yellow-400/20'                   : 'border-t border-[#222]',
+    input:      fieldMode ? 'border border-yellow-400/30 bg-black text-yellow-100 placeholder-yellow-400/30 focus:border-yellow-400' : 'border border-[#333] bg-[#111] text-[#f0f0f0] placeholder-[#555] focus:border-[#ff6b00]',
+    micBtn:     fieldMode ? 'border-yellow-400/30 text-yellow-400/50 hover:border-yellow-300 hover:text-yellow-300' : 'border-[#333] text-[#555] hover:border-[#ff6b00] hover:text-[#ff6b00]',
+    hint:       fieldMode ? 'text-yellow-400/30'                              : 'text-[#444]',
+  }
+
   return (
     <div className="flex flex-col h-full">
 
       {/* Top bar */}
       <div className="flex items-center justify-between mb-3 px-1">
-        <div className="flex items-center gap-1.5 text-[10px] text-[#555] uppercase tracking-wider">
+        <div className={`flex items-center gap-1.5 text-[10px] uppercase tracking-wider ${fm.topBar}`}>
           <Zap className="h-3 w-3 text-[#ff6b00]" />
           Ask Sparky AI
         </div>
@@ -278,7 +299,7 @@ export function AskSparkyTab() {
             className={`flex items-center gap-1.5 px-2.5 py-1.5 border text-[10px] uppercase tracking-wider font-bold transition-all ${
               speakEnabled
                 ? 'border-[#00d4ff] text-[#00d4ff] bg-[#00d4ff12]'
-                : 'border-[#333] text-[#555]'
+                : fieldMode ? 'border-yellow-400/30 text-yellow-400/50' : 'border-[#333] text-[#555]'
             }`}
           >
             {isSpeaking
@@ -295,7 +316,7 @@ export function AskSparkyTab() {
       {!historyLoaded && (
         <div className="flex items-center gap-2 px-1 mb-2">
           <Loader2 className="h-3 w-3 animate-spin text-[#ff6b00]" />
-          <span className="text-[10px] text-[#555] uppercase tracking-wider">Loading your history...</span>
+          <span className={`text-[10px] uppercase tracking-wider ${fm.hint}`}>Loading your history...</span>
         </div>
       )}
 
@@ -309,9 +330,7 @@ export function AskSparkyTab() {
               </div>
             )}
             <div className={`max-w-[82%] px-3 py-2.5 text-sm leading-relaxed ${
-              msg.role === 'user'
-                ? 'bg-[#1a1f2e] text-[#f0f0f0] border border-[#333]'
-                : 'bg-[#111] text-[#e0e0e0] border border-[#2a2a2a]'
+              msg.role === 'user' ? fm.userBubble : fm.botBubble
             }`}>
               {msg.content}
 
@@ -330,7 +349,9 @@ export function AskSparkyTab() {
 
         {isListening && transcript && (
           <div className="flex gap-2.5 flex-row-reverse">
-            <div className="max-w-[82%] px-3 py-2.5 text-sm text-[#888] border border-dashed border-[#444] bg-[#111] italic">
+            <div className={`max-w-[82%] px-3 py-2.5 text-sm italic border border-dashed ${
+              fieldMode ? 'text-yellow-400/60 border-yellow-400/30 bg-black' : 'text-[#888] border-[#444] bg-[#111]'
+            }`}>
               {transcript}...
             </div>
           </div>
@@ -341,7 +362,7 @@ export function AskSparkyTab() {
             <div className="flex h-7 w-7 shrink-0 items-center justify-center bg-[#ff6b00] mt-1">
               <Zap className="h-3.5 w-3.5 text-[#0f1115]" />
             </div>
-            <div className="bg-[#111] border border-[#2a2a2a] px-3 py-2.5">
+            <div className={`border px-3 py-2.5 ${fieldMode ? 'bg-black border-yellow-400/20' : 'bg-[#111] border-[#2a2a2a]'}`}>
               <div className="flex gap-1 items-center h-5">
                 <span className="w-1.5 h-1.5 bg-[#ff6b00] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                 <span className="w-1.5 h-1.5 bg-[#ff6b00] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -354,7 +375,7 @@ export function AskSparkyTab() {
       </div>
 
       {/* Input area */}
-      <div className="border-t border-[#222] pt-3">
+      <div className={`pt-3 ${fm.inputBar}`}>
         {isListening && (
           <div className="flex items-center gap-2 mb-2 px-1">
             <div className="flex gap-1">
@@ -364,7 +385,7 @@ export function AskSparkyTab() {
               ))}
             </div>
             <span className="text-[10px] text-[#ff6b00] uppercase tracking-wider font-bold">Listening...</span>
-            <span className="text-[10px] text-[#555]">Tap mic to stop</span>
+            <span className={`text-[10px] ${fm.hint}`}>Tap mic to stop</span>
           </div>
         )}
 
@@ -373,11 +394,11 @@ export function AskSparkyTab() {
             <button
               onClick={() => isListening ? stopListening() : startListening()}
               disabled={loading}
-              className={`flex h-11 w-11 shrink-0 items-center justify-center border transition-all ${
+              className={`flex h-11 w-11 shrink-0 items-center justify-center border transition-all disabled:opacity-40 ${
                 isListening
                   ? 'border-[#ff6b00] bg-[#ff6b0020] text-[#ff6b00] animate-pulse'
-                  : 'border-[#333] text-[#555] hover:border-[#ff6b00] hover:text-[#ff6b00]'
-              } disabled:opacity-40`}
+                  : fm.micBtn
+              }`}
             >
               {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </button>
@@ -388,7 +409,7 @@ export function AskSparkyTab() {
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={isListening ? 'Listening...' : 'Ask an electrical question...'}
-            className="flex-1 h-11 border border-[#333] bg-[#111] px-3 text-sm text-[#f0f0f0] placeholder-[#555] focus:border-[#ff6b00] focus:outline-none"
+            className={`flex-1 h-11 px-3 text-sm focus:outline-none ${fm.input}`}
             disabled={loading}
           />
 
@@ -402,7 +423,7 @@ export function AskSparkyTab() {
         </div>
 
         <div className="mt-2 flex items-center justify-between px-1">
-          <span className="text-[9px] text-[#444]">
+          <span className={`text-[9px] ${fm.hint}`}>
             {voiceSupported ? '🎤 Tap mic to speak • Enter to send' : 'Enter to send'}
           </span>
           {isSpeaking && (
