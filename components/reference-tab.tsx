@@ -510,30 +510,19 @@ const abbreviations = [
 function SubpanelBondDiagram({ wrong }: { wrong: boolean }) {
   return (
     <svg viewBox="0 0 200 160" className="w-full" style={{ maxHeight: 160 }}>
-      {/* Panel box */}
       <rect x="30" y="20" width="140" height="120" fill="#1a1f2e" stroke={wrong ? '#ff4444' : '#00ff88'} strokeWidth="2" rx="3" />
       <text x="100" y="38" textAnchor="middle" fill="#888" fontSize="9" fontFamily="monospace">SUBPANEL</text>
-
-      {/* Neutral bus */}
       <rect x="55" y="50" width="8" height="70" fill="#00d4ff" rx="1" />
       <text x="59" y="132" textAnchor="middle" fill="#00d4ff" fontSize="8" fontFamily="monospace">N</text>
-
-      {/* Ground bus */}
       <rect x="137" y="50" width="8" height="70" fill="#00ff88" rx="1" />
       <text x="141" y="132" textAnchor="middle" fill="#00ff88" fontSize="8" fontFamily="monospace">G</text>
-
-      {/* Neutral wires */}
       <line x1="59" y1="55" x2="40" y2="55" stroke="#00d4ff" strokeWidth="1.5" />
       <line x1="59" y1="70" x2="40" y2="70" stroke="#00d4ff" strokeWidth="1.5" />
       <line x1="59" y1="85" x2="40" y2="85" stroke="#00d4ff" strokeWidth="1.5" />
-
-      {/* Ground wires */}
       <line x1="141" y1="55" x2="160" y2="55" stroke="#00ff88" strokeWidth="1.5" />
       <line x1="141" y1="70" x2="160" y2="70" stroke="#00ff88" strokeWidth="1.5" />
-
       {wrong ? (
         <>
-          {/* Bonding jumper — WRONG */}
           <line x1="63" y1="90" x2="137" y2="90" stroke="#ff4444" strokeWidth="2.5" strokeDasharray="4,2" />
           <circle cx="100" cy="90" r="8" fill="#ff4444" opacity="0.2" />
           <text x="100" y="94" textAnchor="middle" fill="#ff4444" fontSize="9" fontWeight="bold">✕</text>
@@ -541,7 +530,6 @@ function SubpanelBondDiagram({ wrong }: { wrong: boolean }) {
         </>
       ) : (
         <>
-          {/* Isolated — CORRECT */}
           <text x="100" y="94" textAnchor="middle" fill="#00ff88" fontSize="7" fontFamily="monospace">ISOLATED</text>
           <text x="100" y="105" textAnchor="middle" fill="#00ff88" fontSize="7" fontFamily="monospace">NO BOND ✓</text>
           <line x1="80" y1="118" x2="120" y2="118" stroke="#00ff88" strokeWidth="1" />
@@ -559,7 +547,6 @@ function BoxFillDiagram({ wrong }: { wrong: boolean }) {
     <svg viewBox="0 0 200 140" className="w-full" style={{ maxHeight: 140 }}>
       <rect x="50" y="20" width="100" height="90" fill="#1a1f2e" stroke={wrong ? '#ff4444' : '#00ff88'} strokeWidth="2" rx="2" />
       <text x="100" y="14" textAnchor="middle" fill="#888" fontSize="8" fontFamily="monospace">4" SQUARE BOX</text>
-
       {wrong ? (
         <>
           {[30,42,54,66,78,88,98,108].map((y, i) => (
@@ -608,21 +595,15 @@ function ConduitFillDiagram({ wrong }: { wrong: boolean }) {
 function WireBreakerDiagram({ wrong }: { wrong: boolean }) {
   return (
     <svg viewBox="0 0 200 120" className="w-full" style={{ maxHeight: 120 }}>
-      {/* Breaker */}
       <rect x="30" y="30" width="50" height="60" fill="#1a1f2e" stroke="#555" strokeWidth="1.5" rx="3" />
       <text x="55" y="55" textAnchor="middle" fill={wrong ? '#ff4444' : '#00ff88'} fontSize="14" fontWeight="bold" fontFamily="monospace">20A</text>
       <text x="55" y="70" textAnchor="middle" fill="#888" fontSize="8" fontFamily="monospace">BREAKER</text>
-
-      {/* Wire */}
       <line x1="80" y1="60" x2="140" y2="60" stroke={wrong ? '#ff4444' : '#00ff88'} strokeWidth={wrong ? 2 : 4} />
-
-      {/* Wire label */}
       <rect x="120" y="20" width="55" height="35" fill="#1a1f2e" stroke={wrong ? '#ff4444' : '#00ff88'} strokeWidth="1.5" rx="2" />
       <text x="147" y="35" textAnchor="middle" fill={wrong ? '#ff4444' : '#00ff88'} fontSize="11" fontWeight="bold" fontFamily="monospace">
         {wrong ? '#14' : '#12'}
       </text>
       <text x="147" y="48" textAnchor="middle" fill="#888" fontSize="8" fontFamily="monospace">AWG</text>
-
       <text x="100" y="85" textAnchor="middle" fill={wrong ? '#ff4444' : '#00ff88'} fontSize="8" fontFamily="monospace">
         {wrong ? '15A MAX on #14 ✕' : '#12 = 20A OK ✓'}
       </text>
@@ -657,28 +638,12 @@ const ampacityTable = [
 ]
 
 const wireVolumes: Record<string, number> = { "14": 2.00, "12": 2.25, "10": 2.50, "8": 3.00, "6": 5.00 }
-const boxSizes = [
-  { name: "4x1-1/4 round", volume: 12.5 },
-  { name: "4x1-1/2 round", volume: 14.5 },
-  { name: "4x2-1/8 round", volume: 21.5 },
-  { name: "4 square x 1-1/4", volume: 18.0 },
-  { name: "4 square x 1-1/2", volume: 21.0 },
-  { name: "4 square x 2-1/8", volume: 30.3 },
-  { name: "Single gang (18ci)", volume: 18.0 },
-  { name: "Double gang (34ci)", volume: 34.0 },
-]
 
 function CodeSection() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isListening, setIsListening] = useState(false)
   const [activeFilter, setActiveFilter] = useState<string | null>(null)
   const [bookmarked, setBookmarked] = useState<string[]>([])
-  const [showCalculator, setShowCalculator] = useState(false)
-  const [wireSize, setWireSize] = useState("12")
-  const [wireCount, setWireCount] = useState(4)
-  const [deviceCount, setDeviceCount] = useState(1)
-  const [hasClamps, setHasClamps] = useState(true)
-  const [groundCount, setGroundCount] = useState(1)
 
   const startVoiceSearch = () => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
@@ -713,21 +678,14 @@ function CodeSection() {
     return necDatabase
   }, [searchQuery, activeFilter])
 
-  const calc = showCalculator ? (() => {
-    const wv = wireVolumes[wireSize] || 2.25
-    return {
-      total: wireCount * wv + deviceCount * wv * 2 + (hasClamps ? wv : 0) + (groundCount > 0 ? wv : 0)
-    }
-  })() : null
-
   return (
     <div>
-     <div className="sticky top-0 bg-[#0f1115] field-mode:bg-black z-10 pb-3 border-b border-[#1e2028] field-mode:border-yellow-400/20 mb-4">
+      <div className="sticky top-0 bg-[#0f1115] field-mode:bg-black z-10 pb-3 border-b border-[#1e2028] field-mode:border-yellow-400/20 mb-4">
         <div className="relative mb-3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#555] field-mode:text-yellow-400/50" />
-          <input type="text" placeholder="Search symbols..." value={searchQuery}
+          <input type="text" placeholder="Search NEC articles..." value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-[#111] field-mode:bg-black border border-[#2a2a35] field-mode:border-yellow-400/30 pl-9 pr-3 py-2.5 text-sm text-white field-mode:text-yellow-100 placeholder-[#555] focus:border-[#ff6b00] focus:outline-none" />
+            className="w-full bg-[#111] field-mode:bg-black border border-[#2a2a35] field-mode:border-yellow-400/30 pl-9 pr-10 py-2.5 text-sm text-white field-mode:text-yellow-100 placeholder-[#555] focus:border-[#00ff88] focus:outline-none" />
           <button onClick={startVoiceSearch}
             className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 ${isListening ? 'text-red-400 animate-pulse' : 'text-[#00ff88]'}`}>
             <Mic className="h-4 w-4" />
@@ -748,24 +706,24 @@ function CodeSection() {
         <div className="mb-4 bg-[#111] field-mode:bg-black border border-[#2a2a35] field-mode:border-yellow-400/30 p-3 overflow-x-auto">
           <div className="flex items-center gap-2 mb-2">
             <Zap className="h-4 w-4 text-[#00ff88]" />
-            <span className="font-bold text-white text-sm">Ampacity (310.16) — Copper</span>
+            <span className="font-bold text-white field-mode:text-yellow-100 text-sm">Ampacity (310.16) — Copper</span>
           </div>
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-[#333] text-[#555]">
                 <th className="text-left py-1">Size</th>
                 <th className="text-center py-1">60°C</th>
-                <th className="text-center py-1 text-[#00ff88]">75°C</th>
+                <th className="text-center py-1 text-[#00ff88] field-mode:text-yellow-300">75°C</th>
                 <th className="text-center py-1">90°C</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1e2028]">
               {ampacityTable.map(row => (
                 <tr key={row.size}>
-                  <td className="py-1 font-mono text-[#f0f0f0]">{row.size}</td>
-                  <td className="text-center py-1 text-[#888]">{row.copper["60°C"]}A</td>
-                  <td className="text-center py-1 text-[#f0f0f0]">{row.copper["75°C"]}A</td>
-                  <td className="text-center py-1 text-[#888]">{row.copper["90°C"]}A</td>
+                  <td className="py-1 font-mono text-[#f0f0f0] field-mode:text-yellow-100">{row.size}</td>
+                  <td className="text-center py-1 text-[#888] field-mode:text-yellow-400/50">{row.copper["60°C"]}A</td>
+                  <td className="text-center py-1 text-[#f0f0f0] field-mode:text-yellow-100">{row.copper["75°C"]}A</td>
+                  <td className="text-center py-1 text-[#888] field-mode:text-yellow-400/50">{row.copper["90°C"]}A</td>
                 </tr>
               ))}
             </tbody>
@@ -799,7 +757,7 @@ function CodeSection() {
               ))}
             </div>
             {article.commonViolations.length > 0 && (
-              <div className="p-3 bg-[#130d10] border-t border-[#2a2a35]">
+              <div className="p-3 bg-[#130d10] field-mode:bg-black border-t border-[#2a2a35] field-mode:border-yellow-400/20">
                 <div className="flex items-center gap-1.5 mb-2">
                   <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
                   <span className="text-xs uppercase text-red-400 font-bold">Common Violations</span>
@@ -812,18 +770,18 @@ function CodeSection() {
                     </div>
                     <div className="flex items-start gap-1.5 mt-1 pl-5">
                       <Check className="h-3.5 w-3.5 text-[#00ff88] mt-0.5 shrink-0" />
-                      <p className="text-[#00ff88] text-xs">{v.fix}</p>
+                      <p className="text-[#00ff88] field-mode:text-yellow-300 text-xs">{v.fix}</p>
                     </div>
                   </div>
                 ))}
               </div>
             )}
             {article.relatedArticles.length > 0 && (
-              <div className="p-3 border-t border-[#2a2a35]">
+              <div className="p-3 border-t border-[#2a2a35] field-mode:border-yellow-400/20">
                 <div className="flex flex-wrap gap-1.5">
                   {article.relatedArticles.map(art => (
                     <button key={art} onClick={() => { setSearchQuery(art); setActiveFilter(null) }}
-                      className="flex items-center gap-0.5 px-2 py-1 bg-[#0a0b0e] text-[#00d4ff] text-xs border border-[#2a2a35] hover:border-[#00d4ff]">
+                      className="flex items-center gap-0.5 px-2 py-1 bg-[#0a0b0e] field-mode:bg-black text-[#00d4ff] field-mode:text-yellow-300 text-xs border border-[#2a2a35] field-mode:border-yellow-400/30 hover:border-[#00d4ff]">
                       {art} <ChevronRight className="h-3 w-3" />
                     </button>
                   ))}
@@ -865,7 +823,6 @@ function InspectSection() {
 
   return (
     <div>
-      {/* Header */}
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-1">
           <ShieldAlert className="h-4 w-4 text-[#ff4444]" />
@@ -874,15 +831,13 @@ function InspectSection() {
         <p className="text-[10px] text-[#555]">Most common commercial inspection write-ups. Know before the inspector shows up.</p>
       </div>
 
-      {/* Search */}
       <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#555]" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#555] field-mode:text-yellow-400/50" />
         <input type="text" placeholder="Search violations..." value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          className="w-full bg-[#111] border border-[#2a2a35] pl-9 pr-3 py-2.5 text-sm text-white placeholder-[#555] focus:border-[#ff4444] focus:outline-none" />
+          className="w-full bg-[#111] field-mode:bg-black border border-[#2a2a35] field-mode:border-yellow-400/30 pl-9 pr-3 py-2.5 text-sm text-white field-mode:text-yellow-100 placeholder-[#555] focus:border-[#ff4444] focus:outline-none" />
       </div>
 
-      {/* Category filter */}
       <div className="flex gap-2 overflow-x-auto mb-4 pb-1" style={{ scrollbarWidth: 'none' }}>
         {CATEGORIES.map(cat => (
           <button key={cat} onClick={() => setActiveCategory(cat)}
@@ -892,7 +847,6 @@ function InspectSection() {
         ))}
       </div>
 
-      {/* Severity legend */}
       <div className="flex gap-3 mb-4">
         {(['critical','major','minor'] as const).map(s => (
           <div key={s} className="flex items-center gap-1.5">
@@ -902,47 +856,45 @@ function InspectSection() {
         ))}
       </div>
 
-      {/* Violation cards */}
       <div className="space-y-3">
         {filtered.map(item => {
           const isExpanded = expandedId === item.id
           return (
             <div key={item.id} className="border overflow-hidden" style={{ borderColor: isExpanded ? SEVERITY_COLOR[item.severity] : '#2a2a35' }}>
-              {/* Card header */}
               <button className="w-full p-3 text-left bg-[#111] field-mode:bg-black flex items-start gap-3"
                 onClick={() => setExpandedId(isExpanded ? null : item.id)}>
                 <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: SEVERITY_COLOR[item.severity] }} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                   <button className="w-full p-3 text-left bg-[#111] field-mode:bg-black flex items-start gap-3"
+                    <span className="text-sm font-bold text-white field-mode:text-yellow-100">{item.title}</span>
                     <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 border"
                       style={{ color: SEVERITY_COLOR[item.severity], borderColor: SEVERITY_COLOR[item.severity] + '40' }}>
                       {SEVERITY_LABEL[item.severity]}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] font-mono text-[#555]">{item.nec}</span>
+                    <span className="text-[10px] font-mono text-[#555] field-mode:text-yellow-400/40">{item.nec}</span>
                     <span className="text-[10px] text-[#444]">·</span>
-                    <span className="text-[10px] text-[#555]">{item.category}</span>
+                    <span className="text-[10px] text-[#555] field-mode:text-yellow-400/40">{item.category}</span>
                   </div>
                 </div>
-                <div className="text-[#555] shrink-0">{isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}</div>
+                <div className="text-[#555] field-mode:text-yellow-400/40 shrink-0">
+                  {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </div>
               </button>
 
-              {/* Expanded content */}
               {isExpanded && (
                 <div className="border-t border-[#1e2028]">
-                  {/* Diagram if available */}
                   {item.has_diagram && (
                     <div className="grid grid-cols-2 border-b border-[#1e2028]">
-                      <div className="p-3 border-r border-[#1e2028] bg-[#130d10]">
+                      <div className="p-3 border-r border-[#1e2028] bg-[#130d10] field-mode:bg-black">
                         <div className="flex items-center gap-1.5 mb-2">
                           <X className="h-3 w-3 text-[#ff4444]" />
                           <span className="text-[9px] font-bold uppercase tracking-wider text-[#ff4444]">Fails</span>
                         </div>
                         {getDiagram(item.id, true)}
                       </div>
-                      <div className="p-3 bg-[#0d1310]">
+                      <div className="p-3 bg-[#0d1310] field-mode:bg-black">
                         <div className="flex items-center gap-1.5 mb-2">
                           <Check className="h-3 w-3 text-[#00ff88]" />
                           <span className="text-[9px] font-bold uppercase tracking-wider text-[#00ff88]">Passes</span>
@@ -952,17 +904,14 @@ function InspectSection() {
                     </div>
                   )}
 
-                  {/* Photo placeholder for non-diagram items */}
                   {!item.has_diagram && (
-                    <div className="mx-3 mt-3 border border-dashed border-[#2a2a35] p-3 bg-[#0a0b0e]">
-                      <div className="text-[9px] uppercase tracking-wider text-[#444] mb-1">Photo Reference</div>
-                      <div className="text-[10px] text-[#555] italic leading-relaxed">{item.photo_prompt}</div>
-                      <div className="mt-2 text-[9px] text-[#333]">→ Generate with Midjourney or DALL-E, add to /public/inspect/{item.id}.jpg</div>
+                    <div className="mx-3 mt-3 border border-dashed border-[#2a2a35] field-mode:border-yellow-400/20 p-3 bg-[#0a0b0e] field-mode:bg-black">
+                      <div className="text-[9px] uppercase tracking-wider text-[#444] field-mode:text-yellow-400/40 mb-1">Photo Reference</div>
+                      <div className="text-[10px] text-[#555] field-mode:text-yellow-400/40 italic leading-relaxed">{item.photo_prompt}</div>
                     </div>
                   )}
 
-                  {/* What fails */}
-                  <div className="p-3 border-t border-[#1e2028] bg-[#130d10]">
+                  <div className="p-3 border-t border-[#1e2028] bg-[#130d10] field-mode:bg-black">
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <X className="h-3.5 w-3.5 text-[#ff4444] shrink-0" />
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[#ff4444]">What Fails</span>
@@ -970,17 +919,15 @@ function InspectSection() {
                     <p className="text-xs text-[#cc8888] leading-relaxed">{item.what_fails}</p>
                   </div>
 
-                  {/* Why it fails */}
-                  <div className="p-3 border-t border-[#1e2028] bg-[#111]">
+                  <div className="p-3 border-t border-[#1e2028] bg-[#111] field-mode:bg-black">
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <AlertTriangle className="h-3.5 w-3.5 text-[#ffaa00] shrink-0" />
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[#ffaa00]">Why It Fails</span>
                     </div>
-                    <p className="text-xs text-[#aaa] leading-relaxed">{item.why_it_fails}</p>
+                    <p className="text-xs text-[#aaa] field-mode:text-yellow-100/70 leading-relaxed">{item.why_it_fails}</p>
                   </div>
 
-                  {/* What passes */}
-                  <div className="p-3 border-t border-[#1e2028] bg-[#0d1310]">
+                  <div className="p-3 border-t border-[#1e2028] bg-[#0d1310] field-mode:bg-black">
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <Check className="h-3.5 w-3.5 text-[#00ff88] shrink-0" />
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[#00ff88]">What Passes</span>
@@ -988,13 +935,12 @@ function InspectSection() {
                     <p className="text-xs text-[#88cc99] leading-relaxed">{item.what_passes}</p>
                   </div>
 
-                  {/* Inspector note */}
-                  <div className="p-3 border-t border-[#1e2028] bg-[#0f1115]">
+                  <div className="p-3 border-t border-[#1e2028] bg-[#0f1115] field-mode:bg-black">
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <Star className="h-3.5 w-3.5 text-[#00d4ff] shrink-0" />
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[#00d4ff]">Inspector's Note</span>
                     </div>
-                    <p className="text-xs text-[#8899aa] leading-relaxed italic">"{item.inspector_note}"</p>
+                    <p className="text-xs text-[#8899aa] field-mode:text-yellow-100/60 leading-relaxed italic">"{item.inspector_note}"</p>
                   </div>
                 </div>
               )}
@@ -1024,12 +970,12 @@ function SymbolsSection() {
 
   return (
     <div>
-      <div className="sticky top-0 bg-[#0f1115] z-10 pb-3 border-b border-[#1e2028] mb-4">
+      <div className="sticky top-0 bg-[#0f1115] field-mode:bg-black z-10 pb-3 border-b border-[#1e2028] field-mode:border-yellow-400/20 mb-4">
         <div className="relative mb-3">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#555]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#555] field-mode:text-yellow-400/50" />
           <input type="text" placeholder="Search symbols..." value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-[#111] border border-[#2a2a35] pl-9 pr-3 py-2.5 text-sm text-white placeholder-[#555] focus:border-[#ff6b00] focus:outline-none" />
+            className="w-full bg-[#111] field-mode:bg-black border border-[#2a2a35] field-mode:border-yellow-400/30 pl-9 pr-3 py-2.5 text-sm text-white field-mode:text-yellow-100 placeholder-[#555] focus:border-[#ff6b00] focus:outline-none" />
         </div>
         {!searchQuery && (
           <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
@@ -1053,16 +999,16 @@ function SymbolsSection() {
         <div className="space-y-4">
           {filteredCategories.map(cat => (
             <div key={cat.id}>
-              <h3 className="text-[10px] font-bold text-[#555] uppercase mb-2">{cat.name}</h3>
+              <h3 className="text-[10px] font-bold text-[#555] field-mode:text-yellow-400/50 uppercase mb-2">{cat.name}</h3>
               <div className="space-y-1">
                 {cat.symbols.map((sym, idx) => (
-                  <div key={idx} className="bg-[#111] border border-[#2a2a35] p-3 flex items-center gap-3">
-                    <div className="w-14 h-14 bg-[#0a0b0e] border border-[#2a2a35] flex items-center justify-center shrink-0">
-                      <span className="text-sm font-mono text-[#ff6b00] font-bold">{sym.symbol}</span>
+                  <div key={idx} className="bg-[#111] field-mode:bg-black border border-[#2a2a35] field-mode:border-yellow-400/30 p-3 flex items-center gap-3">
+                    <div className="w-14 h-14 bg-[#0a0b0e] field-mode:bg-black border border-[#2a2a35] field-mode:border-yellow-400/20 flex items-center justify-center shrink-0">
+                      <span className="text-sm font-mono text-[#ff6b00] field-mode:text-yellow-300 font-bold">{sym.symbol}</span>
                     </div>
                     <div>
-                      <p className="text-white font-medium text-sm">{sym.name}</p>
-                      {sym.description && <p className="text-[#555] text-xs mt-0.5">{sym.description}</p>}
+                      <p className="text-white field-mode:text-yellow-100 font-medium text-sm">{sym.name}</p>
+                      {sym.description && <p className="text-[#555] field-mode:text-yellow-400/50 text-xs mt-0.5">{sym.description}</p>}
                     </div>
                   </div>
                 ))}
@@ -1074,30 +1020,30 @@ function SymbolsSection() {
         <div>
           {activeCatData && (
             <div>
-              <h2 className="text-sm font-bold text-white mb-0.5">{activeCatData.name}</h2>
-              <p className="text-[10px] text-[#555] mb-3">NECA 100 Standard Symbols</p>
+              <h2 className="text-sm font-bold text-white field-mode:text-yellow-100 mb-0.5">{activeCatData.name}</h2>
+              <p className="text-[10px] text-[#555] field-mode:text-yellow-400/50 mb-3">NECA 100 Standard Symbols</p>
               <div className="space-y-1">
                 {activeCatData.symbols.map((sym, idx) => (
-                  <div key={idx} className="bg-[#111] border border-[#2a2a35] p-3 flex items-center gap-3 hover:border-[#333] transition-colors">
-                    <div className="w-14 h-14 bg-[#0a0b0e] border border-[#2a2a35] flex items-center justify-center shrink-0">
-                      <span className="text-sm font-mono font-bold" style={{ color: activeCatData.color }}>{sym.symbol}</span>
+                  <div key={idx} className="bg-[#111] field-mode:bg-black border border-[#2a2a35] field-mode:border-yellow-400/30 p-3 flex items-center gap-3 hover:border-[#333] transition-colors">
+                    <div className="w-14 h-14 bg-[#0a0b0e] field-mode:bg-black border border-[#2a2a35] field-mode:border-yellow-400/20 flex items-center justify-center shrink-0">
+                      <span className="text-sm font-mono font-bold field-mode:text-yellow-300" style={{ color: activeCatData.color }}>{sym.symbol}</span>
                     </div>
                     <div className="flex-1">
-                      <p className="text-white font-medium text-sm">{sym.name}</p>
-                      {sym.description && <p className="text-[#555] text-xs mt-0.5">{sym.description}</p>}
+                      <p className="text-white field-mode:text-yellow-100 font-medium text-sm">{sym.name}</p>
+                      {sym.description && <p className="text-[#555] field-mode:text-yellow-400/50 text-xs mt-0.5">{sym.description}</p>}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
-          <div className="mt-8 pt-6 border-t border-[#1e2028]">
-            <h3 className="text-[10px] font-bold text-[#555] uppercase mb-3">Common Abbreviations</h3>
+          <div className="mt-8 pt-6 border-t border-[#1e2028] field-mode:border-yellow-400/20">
+            <h3 className="text-[10px] font-bold text-[#555] field-mode:text-yellow-400/50 uppercase mb-3">Common Abbreviations</h3>
             <div className="grid grid-cols-2 gap-1">
               {abbreviations.map((item, idx) => (
-                <div key={idx} className="bg-[#111] border border-[#1e2028] p-2">
-                  <span className="text-[#ff6b00] font-bold text-xs">{item.abbr}</span>
-                  <p className="text-[#666] text-[10px] mt-0.5">{item.meaning}</p>
+                <div key={idx} className="bg-[#111] field-mode:bg-black border border-[#1e2028] field-mode:border-yellow-400/20 p-2">
+                  <span className="text-[#ff6b00] field-mode:text-yellow-300 font-bold text-xs">{item.abbr}</span>
+                  <p className="text-[#666] field-mode:text-yellow-400/50 text-[10px] mt-0.5">{item.meaning}</p>
                 </div>
               ))}
             </div>
@@ -1121,7 +1067,6 @@ export function ReferenceTab() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Section switcher */}
       <div className="flex gap-0 mb-5 border border-[#2a2a35] field-mode:border-yellow-400/30">
         {sections.map(s => (
           <button key={s.id} onClick={() => setSection(s.id)}
@@ -1136,7 +1081,6 @@ export function ReferenceTab() {
         ))}
       </div>
 
-      {/* Section content */}
       <div className="flex-1 overflow-y-auto pb-6">
         {section === 'code'    && <CodeSection />}
         {section === 'inspect' && <InspectSection />}
