@@ -198,7 +198,7 @@ export function CredentialsTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-sm font-bold uppercase tracking-wider text-[#f0f0f0]">Credential Wallet</h2>
-          <p className="text-[11px] text-[#555] mt-0.5">Licenses, certs &amp; cards — encrypted</p>
+          <p className="text-[11px] text-[#555] mt-0.5">Licenses, certs & cards — encrypted</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
