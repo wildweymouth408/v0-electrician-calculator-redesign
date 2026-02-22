@@ -626,15 +626,23 @@ function getDiagram(id: string, wrong: boolean) {
 
 // ─── CODE SECTION ─────────────────────────────────────────────────────────────
 
+// NEC Table 310.16 — Copper conductors, 240.4(D) applied to 14/12/10 AWG
+// 14, 12, 10 AWG: all temp columns capped at max OCPD per 240.4(D)
+// All other sizes: raw NEC 310.16 ampacities (2023 NEC)
 const ampacityTable = [
-  { size: "14 AWG", copper: { "60°C": 15, "75°C": 20, "90°C": 25 } },
-  { size: "12 AWG", copper: { "60°C": 20, "75°C": 25, "90°C": 30 } },
-  { size: "10 AWG", copper: { "60°C": 30, "75°C": 35, "90°C": 40 } },
-  { size: "8 AWG",  copper: { "60°C": 40, "75°C": 50, "90°C": 55 } },
-  { size: "6 AWG",  copper: { "60°C": 55, "75°C": 65, "90°C": 75 } },
-  { size: "4 AWG",  copper: { "60°C": 70, "75°C": 85, "90°C": 95 } },
-  { size: "3 AWG",  copper: { "60°C": 85, "75°C": 100, "90°C": 110 } },
-  { size: "2 AWG",  copper: { "60°C": 95, "75°C": 115, "90°C": 130 } },
+  { size: "14 AWG",  copper: { "60°C": 15,  "75°C": 15,  "90°C": 15  } },
+  { size: "12 AWG",  copper: { "60°C": 20,  "75°C": 20,  "90°C": 20  } },
+  { size: "10 AWG",  copper: { "60°C": 30,  "75°C": 30,  "90°C": 30  } },
+  { size: "8 AWG",   copper: { "60°C": 40,  "75°C": 50,  "90°C": 55  } },
+  { size: "6 AWG",   copper: { "60°C": 55,  "75°C": 65,  "90°C": 75  } },
+  { size: "4 AWG",   copper: { "60°C": 70,  "75°C": 85,  "90°C": 95  } },
+  { size: "3 AWG",   copper: { "60°C": 85,  "75°C": 100, "90°C": 115 } },
+  { size: "2 AWG",   copper: { "60°C": 95,  "75°C": 115, "90°C": 130 } },
+  { size: "1 AWG",   copper: { "60°C": 110, "75°C": 130, "90°C": 145 } },
+  { size: "1/0 AWG", copper: { "60°C": 125, "75°C": 150, "90°C": 170 } },
+  { size: "2/0 AWG", copper: { "60°C": 145, "75°C": 175, "90°C": 195 } },
+  { size: "3/0 AWG", copper: { "60°C": 165, "75°C": 200, "90°C": 225 } },
+  { size: "4/0 AWG", copper: { "60°C": 195, "75°C": 230, "90°C": 260 } },
 ]
 
 const wireVolumes: Record<string, number> = { "14": 2.00, "12": 2.25, "10": 2.50, "8": 3.00, "6": 5.00 }
@@ -701,13 +709,14 @@ function CodeSection() {
         </div>
       </div>
 
-      {/* Ampacity table */}
+      {/* Ampacity table — NEC 310.16 with 240.4(D) applied to 14/12/10 AWG */}
       {(activeFilter === "Wire Size" || searchQuery.toLowerCase().includes("wire") || searchQuery.toLowerCase().includes("ampacity")) && (
         <div className="mb-4 bg-[#111] field-mode:bg-black border border-[#2a2a35] field-mode:border-yellow-400/30 p-3 overflow-x-auto">
           <div className="flex items-center gap-2 mb-2">
             <Zap className="h-4 w-4 text-[#00ff88]" />
             <span className="font-bold text-white field-mode:text-yellow-100 text-sm">Ampacity (310.16) — Copper</span>
           </div>
+          <p className="text-[10px] text-[#666] field-mode:text-yellow-400/40 mb-2">14/12/10 AWG capped per NEC 240.4(D) max OCPD rating</p>
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-[#333] text-[#555]">
