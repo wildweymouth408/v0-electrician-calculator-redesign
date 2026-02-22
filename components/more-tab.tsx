@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { LogOut, Bell, Sun, Moon, Zap, User, ChevronRight, Info } from 'lucide-react'
+import { LogOut, Bell, Sun, Moon, Zap, User, ChevronRight, Info, Bolt } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 interface Profile {
@@ -16,6 +16,7 @@ export function MoreTab() {
   const [email, setEmail] = useState<string | null>(null)
   const [darkMode, setDarkMode] = useState(true)
   const [notifications, setNotifications] = useState(false)
+  const [fieldMode, setFieldMode] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
   const [showAbout, setShowAbout] = useState(false)
 
@@ -35,11 +36,12 @@ export function MoreTab() {
     }
     loadProfile()
 
-    // Load saved preferences
     const savedNotifications = localStorage.getItem('sparky_notifications')
     if (savedNotifications !== null) setNotifications(JSON.parse(savedNotifications))
     const savedDark = localStorage.getItem('sparky_dark_mode')
     if (savedDark !== null) setDarkMode(JSON.parse(savedDark))
+    const savedField = localStorage.getItem('sparky_field_mode')
+    if (savedField !== null) setFieldMode(JSON.parse(savedField))
   }, [])
 
   async function handleSignOut() {
@@ -58,7 +60,14 @@ export function MoreTab() {
     const next = !darkMode
     setDarkMode(next)
     localStorage.setItem('sparky_dark_mode', JSON.stringify(next))
-    // Note: full dark/light mode theming can be wired to ThemeProvider in a future pass
+  }
+
+  function toggleFieldMode() {
+    const next = !fieldMode
+    setFieldMode(next)
+    localStorage.setItem('sparky_field_mode', JSON.stringify(next))
+    // Dispatch event so Home tab reacts without a page reload
+    window.dispatchEvent(new Event('sparky_field_mode_changed'))
   }
 
   const displayName = profile?.name || email?.split('@')[0] || 'Electrician'
@@ -90,6 +99,32 @@ export function MoreTab() {
         <span className="text-[10px] font-medium uppercase tracking-widest text-[#444] px-1 mb-1">
           Settings
         </span>
+
+        {/* Field Mode */}
+        <div className={`flex items-center justify-between rounded border px-4 py-3 transition-colors ${
+          fieldMode ? 'border-[#ffaa00]/40 bg-[#ffaa0008]' : 'border-[#222] bg-[#13161a]'
+        }`}>
+          <div className="flex items-center gap-3">
+            <Sun className={`h-4 w-4 ${fieldMode ? 'text-[#ffaa00]' : 'text-[#888]'}`} />
+            <div className="flex flex-col">
+              <span className={`text-sm ${fieldMode ? 'text-[#ffaa00]' : 'text-[#ccc]'}`}>Field Mode</span>
+              <span className="text-[10px] text-[#444] uppercase tracking-wider">High-vis · Glove-safe</span>
+            </div>
+          </div>
+          <button
+            onClick={toggleFieldMode}
+            className={`relative h-6 w-11 rounded-full transition-colors duration-200 ${
+              fieldMode ? 'bg-[#ffaa00]' : 'bg-[#333]'
+            }`}
+            aria-label="Toggle field mode"
+          >
+            <span
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${
+                fieldMode ? 'translate-x-5' : 'translate-x-0.5'
+              }`}
+            />
+          </button>
+        </div>
 
         {/* Dark Mode */}
         <div className="flex items-center justify-between rounded border border-[#222] bg-[#13161a] px-4 py-3">
