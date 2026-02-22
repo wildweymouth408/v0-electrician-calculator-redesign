@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { LogOut, Bell, Sun, Moon, Zap, User, ChevronRight, Info, Bolt } from 'lucide-react'
+import { LogOut, Bell, Sun, Moon, Zap, User, ChevronRight, Info, Wallet } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { CredentialsTab } from './credentials-tab'
 
 interface Profile {
   name?: string
@@ -19,6 +20,7 @@ export function MoreTab() {
   const [fieldMode, setFieldMode] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
   const [showAbout, setShowAbout] = useState(false)
+  const [showWallet, setShowWallet] = useState(false)
 
   useEffect(() => {
     async function loadProfile() {
@@ -67,7 +69,6 @@ export function MoreTab() {
     const next = !fieldMode
     setFieldMode(next)
     localStorage.setItem('sparky_field_mode', JSON.stringify(next))
-    // Dispatch event so Home tab reacts without a page reload
     window.dispatchEvent(new Event('sparky_field_mode_changed'))
   }
 
@@ -93,6 +94,34 @@ export function MoreTab() {
             <span className="text-[11px] text-[#555] truncate mt-0.5">{email}</span>
           </div>
         </div>
+      </div>
+
+      {/* Credential Wallet */}
+      <div className="flex flex-col gap-1">
+        <span className="text-[10px] font-medium uppercase tracking-widest text-[#444] px-1 mb-1">
+          Wallet
+        </span>
+        <button
+          onClick={() => setShowWallet(!showWallet)}
+          className="flex items-center justify-between rounded border border-[#222] bg-[#13161a] px-4 py-3 text-left w-full"
+        >
+          <div className="flex items-center gap-3">
+            <Wallet className="h-4 w-4 text-[#ff6b00]" />
+            <div className="flex flex-col">
+              <span className="text-sm text-[#ccc]">Credential Wallet</span>
+              <span className="text-[10px] text-[#444] uppercase tracking-wider">Licenses · Certs · Cards</span>
+            </div>
+          </div>
+          <ChevronRight
+            className={`h-4 w-4 text-[#555] transition-transform duration-200 ${showWallet ? 'rotate-90' : ''}`}
+          />
+        </button>
+
+        {showWallet && (
+          <div className="rounded border border-[#222] bg-[#0d1014] px-3 py-4">
+            <CredentialsTab />
+          </div>
+        )}
       </div>
 
       {/* Settings */}
