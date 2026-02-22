@@ -394,7 +394,7 @@ function EditCredentialModal({ cred, userId, onSave, onClose }: {
     <div className="fixed inset-0 z-50 flex items-end bg-black/70" onClick={onClose}>
       <div
         className="w-full bg-[#0f1115] border-t border-[#2a2a35] flex flex-col"
-        style={{ maxHeight: 'calc(88vh - env(safe-area-inset-bottom))' }}
+style={{ maxHeight: '75vh' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Scrollable content */}
