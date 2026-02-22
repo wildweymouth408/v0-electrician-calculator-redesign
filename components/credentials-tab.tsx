@@ -340,7 +340,7 @@ export function CredentialsTab() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 rounded border border-[#222] bg-[#0d1014] px-3 py-2 text-xs text-[#555] hover:text-[#ff6b00] hover:border-[#ff6b00]/20 transition-colors"
-                  >
+                  <a
                     <Upload className="h-3.5 w-3.5" />
                     View Certificate Image
                   </a>
