@@ -217,3 +217,15 @@ input[type="number"] {
     min-height: 44px;
   }
 }
+/* ── Field Mode ─────────────────────────────── */
+html.field-mode {
+  --fm-bg:      #000000;
+  --fm-text:    #fde047;
+  --fm-muted:   rgba(253, 224, 71, 0.6);
+  --fm-border:  rgba(253, 224, 71, 0.3);
+}
+
+html.field-mode body {
+  background-color: var(--fm-bg);
+  color: var(--fm-text);
+}
