@@ -5,7 +5,7 @@ import {
   Zap, User, Award, AlertTriangle, ChevronRight,
   Plus, Trash2, Calendar, Shield, Clock, Lightbulb, Edit2, Check, X,
   Calculator, BookOpen, MessageSquare, Cylinder, Triangle, Ruler, Cable, Gauge, Box, Settings, HardHat,
-  Camera, Image, Expand, Upload
+  Camera, Image, Expand, Upload, Sun
 } from 'lucide-react'
 import { getTipOfTheDay } from '@/lib/tips'
 import { getTopTools, hasUsageData } from '@/lib/usage'
@@ -94,6 +94,27 @@ function expiryLabel(days: number | null, dateStr: string): string {
   if (days === 0) return 'Expires today!'
   if (days < 90) return `Expires in ${days}d`
   return `Valid · ${days}d remaining`
+}
+
+// ─── FIELD MODE HOOK ──────────────────────────────────────────────────────────
+
+function useFieldMode() {
+  const [fieldMode, setFieldMode] = useState(false)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('sparky_field_mode')
+    if (saved !== null) setFieldMode(JSON.parse(saved))
+
+    function handleChange() {
+      const updated = localStorage.getItem('sparky_field_mode')
+      if (updated !== null) setFieldMode(JSON.parse(updated))
+    }
+
+    window.addEventListener('sparky_field_mode_changed', handleChange)
+    return () => window.removeEventListener('sparky_field_mode_changed', handleChange)
+  }, [])
+
+  return fieldMode
 }
 
 // ─── AUTH SCREEN ─────────────────────────────────────────────────────────────
@@ -296,8 +317,6 @@ function CredentialCard({ cred, onEdit, onDelete, onImageClick }: {
   return (
     <div className="bg-[#111] border border-[#2a2a35] p-3 flex items-center gap-3"
       style={{ borderLeftColor: color, borderLeftWidth: 3 }}>
-
-      {/* Thumbnail */}
       {cred.imageUrl ? (
         <button
           onClick={() => onImageClick(cred.imageUrl!, cred.name)}
@@ -316,7 +335,6 @@ function CredentialCard({ cred, onEdit, onDelete, onImageClick }: {
           <Camera className="h-4 w-4" />
         </button>
       )}
-
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-[#f0f0f0] truncate">{cred.name}</span>
@@ -333,7 +351,6 @@ function CredentialCard({ cred, onEdit, onDelete, onImageClick }: {
           <span className="text-[10px] text-[#444] mt-1 block">Tap edit to add dates</span>
         )}
       </div>
-
       <div className="flex items-center gap-2 shrink-0">
         <button onClick={() => onEdit(cred)} className="text-[#555] hover:text-[#ff6b00] transition-colors p-1">
           <Edit2 className="h-3.5 w-3.5" />
@@ -385,38 +402,30 @@ function EditCredentialModal({ cred, userId, onSave, onClose }: {
       setImageUrl(data.publicUrl)
     } catch (e: any) {
       setUploadError(`Upload failed: ${e.message}`)
-      console.error(e)
     }
     setUploading(false)
   }
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col bg-[#0f1115]">
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-[#2a2a35]">
         <span className="text-sm font-bold uppercase tracking-wider text-[#f0f0f0]">
           {isNew ? 'Add Credential' : 'Edit Credential'}
         </span>
-        <button onClick={onClose}>
-          <X className="h-5 w-5 text-[#555]" />
-        </button>
+        <button onClick={onClose}><X className="h-5 w-5 text-[#555]" /></button>
       </div>
-
-      {/* Scrollable form */}
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
         <div>
           <label className={lbl}>Name</label>
           <input className={inp} value={name} onChange={e => setName(e.target.value)}
             placeholder="e.g. OSHA 30, C-10 License..." />
         </div>
-
         <div>
           <label className={lbl}>Category</label>
           <select className={sel} value={category} onChange={e => setCategory(e.target.value)}>
             {CREDENTIAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
-
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={lbl}>Issue Date</label>
@@ -427,40 +436,27 @@ function EditCredentialModal({ cred, userId, onSave, onClose }: {
             <input className={inp} type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} />
           </div>
         </div>
-
         <div>
           <label className={lbl}>Certificate Image</label>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={e => {
-              const file = e.target.files?.[0]
-              if (file) handleImageUpload(file)
-            }}
-          />
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+            onChange={e => { const file = e.target.files?.[0]; if (file) handleImageUpload(file) }} />
           {imageUrl ? (
             <div className="flex items-center gap-3">
               <img src={imageUrl} alt="Certificate"
                 className="w-20 h-20 object-cover rounded border border-[#2a2a35]" />
               <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
+                <button onClick={() => fileInputRef.current?.click()}
                   className="text-xs text-[#ff6b00] uppercase tracking-wider font-bold border border-[#ff6b0033] px-3 py-1.5 hover:border-[#ff6b00] transition-colors">
                   Replace
                 </button>
-                <button
-                  onClick={() => setImageUrl('')}
+                <button onClick={() => setImageUrl('')}
                   className="text-xs text-[#ff4444] uppercase tracking-wider font-bold border border-[#ff444433] px-3 py-1.5 hover:border-[#ff4444] transition-colors">
                   Remove
                 </button>
               </div>
             </div>
           ) : (
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
+            <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
               className="w-full flex items-center justify-center gap-2 border border-dashed border-[#2a2a35] py-6 text-xs text-[#555] uppercase tracking-wider hover:border-[#ff6b00] hover:text-[#ff6b00] transition-colors disabled:opacity-50">
               {uploading
                 ? <span className="flex items-center gap-2"><Upload className="h-4 w-4 animate-pulse" /> Uploading...</span>
@@ -471,8 +467,6 @@ function EditCredentialModal({ cred, userId, onSave, onClose }: {
           {uploadError && <p className="text-xs text-[#ff4444] mt-2">{uploadError}</p>}
         </div>
       </div>
-
-      {/* Save — always visible at bottom */}
       <div className="px-4 py-4 border-t border-[#1a1d22] bg-[#0f1115]">
         <button
           onClick={() => {
@@ -494,6 +488,7 @@ function EditCredentialModal({ cred, userId, onSave, onClose }: {
 // ─── MAIN HOME TAB ────────────────────────────────────────────────────────────
 
 export function HomeTab({ onNavigate }: HomeTabProps) {
+  const fieldMode = useFieldMode()
   const [userId, setUserId] = useState<string | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [credentials, setCredentials] = useState<Credential[]>(DEFAULT_CREDENTIALS)
@@ -503,6 +498,26 @@ export function HomeTab({ onNavigate }: HomeTabProps) {
   const [quickActions, setQuickActions] = useState(DEFAULT_QUICK_ACTIONS)
   const [viewingImage, setViewingImage] = useState<{ url: string; name: string } | null>(null)
   const tip = getTipOfTheDay()
+
+  // ─── Field mode style tokens ───────────────────────────────────────────────
+  const fm = {
+    page:       fieldMode ? 'bg-black'                              : '',
+    card:       fieldMode ? 'bg-black border-yellow-400/40'         : 'bg-[#111] border-[#2a2a35]',
+    cardLeft:   fieldMode ? '#facc15'                               : undefined,
+    heading:    fieldMode ? 'text-yellow-300'                       : 'text-[#888]',
+    body:       fieldMode ? 'text-yellow-100'                       : 'text-[#f0f0f0]',
+    muted:      fieldMode ? 'text-yellow-400/70'                    : 'text-[#888]',
+    dim:        fieldMode ? 'text-yellow-400/40'                    : 'text-[#555]',
+    tipCard:    fieldMode ? 'bg-black border border-yellow-400/30'  : 'relative overflow-hidden border border-[#2a2a35] bg-[#111]',
+    tipText:    fieldMode ? 'text-yellow-100 text-sm font-bold'     : 'text-xs font-medium leading-relaxed text-[#ccc]',
+    tipBody:    fieldMode ? 'text-yellow-300/80 text-sm'            : 'mt-1 text-[11px] leading-relaxed text-[#777]',
+    actionBtn:  fieldMode
+      ? 'border border-yellow-400/40 bg-black p-4 flex flex-col gap-2 text-left active:scale-[0.98] min-h-[80px]'
+      : 'border border-[#2a2a35] bg-[#111] p-3 flex flex-col gap-1.5 text-left transition-colors hover:border-[#333] active:scale-[0.98]',
+    actionLabel: fieldMode ? 'text-sm font-bold text-yellow-100'   : 'text-xs font-bold text-[#f0f0f0]',
+    actionDesc:  fieldMode ? 'text-xs text-yellow-400/60'          : 'text-[10px] text-[#555]',
+    alertBg:    fieldMode ? 'bg-black border border-red-400/50'     : 'bg-[#1a0a0a] border border-[#ff444433]',
+  }
 
   useEffect(() => {
     if (hasUsageData()) {
@@ -610,30 +625,40 @@ export function HomeTab({ onNavigate }: HomeTabProps) {
   }
 
   return (
-    <div className="flex flex-col gap-5 pb-6">
+    <div className={`flex flex-col gap-5 pb-6 ${fm.page}`}>
+
+      {/* Field mode banner */}
+      {fieldMode && (
+        <div className="flex items-center gap-2 bg-yellow-400/10 border border-yellow-400/30 px-3 py-2">
+          <Sun className="h-3.5 w-3.5 text-yellow-400 shrink-0" />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-yellow-400">
+            Field Mode · High-Vis Active
+          </span>
+        </div>
+      )}
 
       {/* Profile header */}
-      <div className="bg-[#111] border border-[#2a2a35] p-4 flex items-center gap-3">
+      <div className={`border p-4 flex items-center gap-3 ${fm.card}`}>
         <div className="flex items-center justify-center w-12 h-12 bg-[#ff6b00] shrink-0">
           <User className="h-6 w-6 text-[#0f1115]" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-lg font-bold text-[#f0f0f0]">{profile.name}</div>
-          <div className="text-xs text-[#888]">{profile.role}</div>
+          <div className={`text-lg font-bold ${fm.body}`}>{profile.name}</div>
+          <div className={`text-xs ${fm.muted}`}>{profile.role}</div>
           <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-[10px] text-[#555]">{profile.yearsExp} yr{profile.yearsExp !== 1 ? 's' : ''} experience</span>
+            <span className={`text-[10px] ${fm.dim}`}>{profile.yearsExp} yr{profile.yearsExp !== 1 ? 's' : ''} experience</span>
             <span className="text-[#333]">·</span>
-            <span className="text-[10px] text-[#555]">{profile.workType}</span>
+            <span className={`text-[10px] ${fm.dim}`}>{profile.workType}</span>
             {profile.licenseNumber && (
               <>
                 <span className="text-[#333]">·</span>
-                <span className="text-[10px] text-[#555]">{profile.licenseState} #{profile.licenseNumber}</span>
+                <span className={`text-[10px] ${fm.dim}`}>{profile.licenseState} #{profile.licenseNumber}</span>
               </>
             )}
           </div>
         </div>
         <button onClick={() => setShowEditProfile(true)}
-          className="text-[#555] hover:text-[#ff6b00] transition-colors p-1 shrink-0">
+          className={`transition-colors p-1 shrink-0 ${fieldMode ? 'text-yellow-400/60 hover:text-yellow-300' : 'text-[#555] hover:text-[#ff6b00]'}`}>
           <Edit2 className="h-4 w-4" />
         </button>
       </div>
@@ -644,11 +669,11 @@ export function HomeTab({ onNavigate }: HomeTabProps) {
           {alerts.map(a => {
             const days = daysUntilExpiry(a.expiryDate)
             return (
-              <div key={a.id} className="flex items-center gap-2.5 bg-[#1a0a0a] border border-[#ff444433] p-3">
+              <div key={a.id} className={`flex items-center gap-2.5 p-3 ${fm.alertBg}`}>
                 <AlertTriangle className="h-4 w-4 text-[#ff4444] shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <span className="text-xs font-bold text-[#ff4444]">{a.name}</span>
-                  <span className="text-xs text-[#888] ml-2">{expiryLabel(days, a.expiryDate)}</span>
+                  <span className={`text-xs font-bold ${fieldMode ? 'text-red-400' : 'text-[#ff4444]'}`}>{a.name}</span>
+                  <span className={`text-xs ml-2 ${fm.muted}`}>{expiryLabel(days, a.expiryDate)}</span>
                 </div>
               </div>
             )
@@ -658,19 +683,23 @@ export function HomeTab({ onNavigate }: HomeTabProps) {
 
       {/* Tip of the day */}
       {tip && (
-        <div className="relative overflow-hidden border border-[#2a2a35] bg-[#111]">
-          <div className="absolute left-0 top-0 h-full w-1"
-            style={{ backgroundColor: categoryColors[tip.category] || '#ff6b00' }} />
-          <div className="p-3 pl-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Lightbulb className="h-3.5 w-3.5 text-[#ffaa00]" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#ffaa00]">Sparky's Tip</span>
-              <span className="text-[10px] uppercase tracking-wider text-[#444]">{tip.category}</span>
+        <div className={fm.tipCard}>
+          {!fieldMode && (
+            <div className="absolute left-0 top-0 h-full w-1"
+              style={{ backgroundColor: categoryColors[tip.category] || '#ff6b00' }} />
+          )}
+          <div className={`p-3 ${!fieldMode ? 'pl-4' : ''}`}>
+            <div className="flex items-center gap-2 mb-1.5">
+              <Lightbulb className={`h-3.5 w-3.5 ${fieldMode ? 'text-yellow-400' : 'text-[#ffaa00]'}`} />
+              <span className={`text-[10px] font-bold uppercase tracking-wider ${fieldMode ? 'text-yellow-400' : 'text-[#ffaa00]'}`}>
+                Sparky's Tip
+              </span>
+              <span className={`text-[10px] uppercase tracking-wider ${fm.dim}`}>{tip.category}</span>
             </div>
-            <p className="text-xs font-medium leading-relaxed text-[#ccc]">{tip.title}</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-[#777]">{tip.body}</p>
+            <p className={fm.tipText}>{tip.title}</p>
+            <p className={fm.tipBody}>{tip.body}</p>
             {tip.reference && (
-              <span className="mt-1 inline-block font-mono text-[10px] text-[#444]">{tip.reference}</span>
+              <span className={`mt-1 inline-block font-mono text-[10px] ${fm.dim}`}>{tip.reference}</span>
             )}
           </div>
         </div>
@@ -679,26 +708,30 @@ export function HomeTab({ onNavigate }: HomeTabProps) {
       {/* Quick actions */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#888]">
+          <h2 className={`text-[11px] font-bold uppercase tracking-wider ${fm.heading}`}>
             {hasUsageData() ? 'Your Top Tools' : 'Quick Actions'}
           </h2>
           {hasUsageData() && (
-            <span className="text-[9px] text-[#444] uppercase tracking-wider">Based on your usage</span>
+            <span className={`text-[9px] uppercase tracking-wider ${fm.dim}`}>Based on your usage</span>
           )}
         </div>
         <div className="grid grid-cols-2 gap-2">
           {quickActions.map(action => {
             const Icon = action.icon
+            const borderColor = fieldMode ? '#facc15' : action.color
             return (
               <button
                 key={action.id}
                 onClick={() => onNavigate?.(action.tab, action.id !== 'sparky-chat' && action.id !== 'nec-ref' ? action.id : undefined)}
-                className="border border-[#2a2a35] bg-[#111] p-3 flex flex-col gap-1.5 text-left transition-colors hover:border-[#333] active:scale-[0.98]"
-                style={{ borderLeftColor: action.color, borderLeftWidth: 3 }}
+                className={fm.actionBtn}
+                style={{ borderLeftColor: borderColor, borderLeftWidth: 3 }}
               >
-                <Icon className="h-4 w-4" style={{ color: action.color }} />
-                <span className="text-xs font-bold text-[#f0f0f0]">{action.label}</span>
-                <span className="text-[10px] text-[#555]">{action.desc}</span>
+                <Icon
+                  className={fieldMode ? 'h-5 w-5' : 'h-4 w-4'}
+                  style={{ color: fieldMode ? '#facc15' : action.color }}
+                />
+                <span className={fm.actionLabel}>{action.label}</span>
+                <span className={fm.actionDesc}>{action.desc}</span>
               </button>
             )
           })}
@@ -709,19 +742,25 @@ export function HomeTab({ onNavigate }: HomeTabProps) {
       <div>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-[#00ff88]" />
-            <h2 className="text-[11px] font-bold uppercase tracking-wider text-[#888]">Credentials</h2>
+            <Shield className={`h-4 w-4 ${fieldMode ? 'text-yellow-400' : 'text-[#00ff88]'}`} />
+            <h2 className={`text-[11px] font-bold uppercase tracking-wider ${fm.heading}`}>Credentials</h2>
           </div>
           <button
             onClick={() => setEditingCred({ id: 'new', name: '', issueDate: '', expiryDate: '', category: 'Other', imageUrl: '' })}
-            className="flex items-center gap-1.5 text-[10px] text-[#ff6b00] uppercase tracking-wider font-bold border border-[#ff6b0033] px-2.5 py-1.5 hover:border-[#ff6b00] transition-colors">
+            className={`flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold px-2.5 py-1.5 transition-colors ${
+              fieldMode
+                ? 'text-yellow-400 border border-yellow-400/30 hover:border-yellow-400'
+                : 'text-[#ff6b00] border border-[#ff6b0033] hover:border-[#ff6b00]'
+            }`}>
             <Plus className="h-3 w-3" /> Add
           </button>
         </div>
         {credentials.length === 0 ? (
-          <div className="border border-dashed border-[#2a2a35] p-6 text-center">
-            <p className="text-[11px] text-[#444]">No credentials added yet</p>
-            <p className="text-[10px] text-[#333] mt-1">Add any certifications here — OSHA cards, licenses, manufacturer certs, and more</p>
+          <div className={`border border-dashed p-6 text-center ${fieldMode ? 'border-yellow-400/20' : 'border-[#2a2a35]'}`}>
+            <p className={`text-[11px] ${fm.dim}`}>No credentials added yet</p>
+            <p className={`text-[10px] mt-1 ${fieldMode ? 'text-yellow-400/30' : 'text-[#333]'}`}>
+              Add any certifications here — OSHA cards, licenses, manufacturer certs, and more
+            </p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
@@ -736,7 +775,7 @@ export function HomeTab({ onNavigate }: HomeTabProps) {
         )}
       </div>
 
-      {/* Edit credential modal */}
+      {/* Modals — unchanged */}
       {editingCred && userId && (
         <EditCredentialModal
           cred={editingCred}
@@ -745,8 +784,6 @@ export function HomeTab({ onNavigate }: HomeTabProps) {
           onClose={() => setEditingCred(null)}
         />
       )}
-
-      {/* Image viewer */}
       {viewingImage && (
         <ImageViewerModal
           url={viewingImage.url}
@@ -754,8 +791,6 @@ export function HomeTab({ onNavigate }: HomeTabProps) {
           onClose={() => setViewingImage(null)}
         />
       )}
-
-      {/* Edit profile modal */}
       {showEditProfile && (
         <div className="fixed inset-0 z-50 flex items-end bg-black/70" onClick={() => setShowEditProfile(false)}>
           <div className="w-full bg-[#0f1115] border-t border-[#2a2a35] p-4 flex flex-col gap-4 max-h-[80vh] overflow-y-auto"
@@ -789,7 +824,7 @@ export function HomeTab({ onNavigate }: HomeTabProps) {
               </select>
             </div>
             <div>
-              <label className="block text-[10px] uppercase tracking-wider text-[#555] mb-2">Work Type</label>
+              <label className="block text-[#10px] uppercase tracking-wider text-[#555] mb-2">Work Type</label>
               <div className="grid grid-cols-2 gap-2">
                 {WORK_TYPES.map(w => (
                   <button key={w}
