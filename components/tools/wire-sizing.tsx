@@ -18,7 +18,12 @@ export function WireSizingCalculator({ compact = false }: { compact?: boolean })
     maxDropPercent: 3,
   })
 
-  const result = calculateWireSizing(inputs)
+  // Input validation
+  const loadError = inputs.loadAmps <= 0 ? 'Load must be greater than 0A' : inputs.loadAmps > 6000 ? 'Exceeds 6000A maximum' : null
+  const distanceError = inputs.distance <= 0 ? 'Distance must be greater than 0 ft' : inputs.distance > 10000 ? 'Exceeds 10,000 ft maximum' : null
+  const hasErrors = loadError !== null || distanceError !== null
+
+  const result = hasErrors ? null : calculateWireSizing(inputs)
 
   function handleSave() {
     if (!result) return
@@ -43,18 +48,24 @@ export function WireSizingCalculator({ compact = false }: { compact?: boolean })
             <input
               type="number"
               value={inputs.loadAmps || ''}
+              min={0.1}
+              max={6000}
               onChange={e => setInputs(p => ({ ...p, loadAmps: Number(e.target.value) }))}
-              className="h-12 border border-[#333] bg-[#111] px-3 font-mono text-sm text-[#f0f0f0] focus:border-[#ff6b00] focus:outline-none"
+              className={`h-12 border bg-[#111] px-3 font-mono text-sm text-[#f0f0f0] focus:outline-none ${loadError ? 'border-red-500 focus:border-red-500' : 'border-[#333] focus:border-[#ff6b00]'}`}
             />
+            {loadError && <span className="text-[10px] text-red-400">{loadError}</span>}
           </label>
           <label className="flex flex-1 flex-col gap-1">
             <span className="text-[11px] uppercase tracking-wider text-[#888]">Distance (ft)</span>
             <input
               type="number"
               value={inputs.distance || ''}
+              min={1}
+              max={10000}
               onChange={e => setInputs(p => ({ ...p, distance: Number(e.target.value) }))}
-              className="h-12 border border-[#333] bg-[#111] px-3 font-mono text-sm text-[#f0f0f0] focus:border-[#ff6b00] focus:outline-none"
+              className={`h-12 border bg-[#111] px-3 font-mono text-sm text-[#f0f0f0] focus:outline-none ${distanceError ? 'border-red-500 focus:border-red-500' : 'border-[#333] focus:border-[#ff6b00]'}`}
             />
+            {distanceError && <span className="text-[10px] text-red-400">{distanceError}</span>}
           </label>
         </div>
 
@@ -135,6 +146,8 @@ export function WireSizingCalculator({ compact = false }: { compact?: boolean })
               <span className="font-mono text-[#f0f0f0]">{result.voltageDrop}V ({result.dropPercent}%)</span>
             </div>
           </div>
+          {/* NEC citations — 310.16 for ampacity; 240.4(D) for OCPD limits on small conductors */}
+          <p className="text-[10px] text-[#444] mt-3">NEC 310.16 (ampacity) · NEC 240.4(D) (OCPD limit) · NEC 215.2(A)(1)(b) (voltage drop)</p>
         </div>
       )}
 

@@ -240,6 +240,7 @@ export interface WireSizingInputs {
   material: 'copper' | 'aluminum'
   insulationType: string
   maxDropPercent: number
+  phase?: 'single' | 'three'
 }
 
 export interface WireSizingResult {
@@ -253,6 +254,9 @@ export interface WireSizingResult {
 export function calculateWireSizing(inputs: WireSizingInputs): WireSizingResult | null {
   const { loadAmps, distance, systemVoltage, material, insulationType, maxDropPercent } = inputs
 
+  // NEC 215.2(A)(1)(b): voltage drop factor — 2 for single-phase (2 conductors), √3 for three-phase
+  const phaseFactor = inputs.phase === 'three' ? 1.732 : 2
+
   const tempRating = INSULATION_TEMP[insulationType] || 75
   const ampKey = material === 'copper'
     ? (tempRating === 60 ? 'cu60' : tempRating === 90 ? 'cu90' : 'cu75')
@@ -263,10 +267,10 @@ export function calculateWireSizing(inputs: WireSizingInputs): WireSizingResult 
   for (const size of sizes) {
     const amp = AMPACITY_TABLE[size][ampKey as keyof typeof AMPACITY_TABLE[string]]
     if (amp >= loadAmps) {
-      // Check voltage drop
+      // Check voltage drop using correct phase factor (NEC 310.15)
       const cm = WIRE_AREAS[size]
       const k = K_FACTOR[material]
-      const vd = (2 * k * loadAmps * distance) / cm
+      const vd = (phaseFactor * k * loadAmps * distance) / cm
       const percent = (vd / systemVoltage) * 100
 
       if (percent <= maxDropPercent) {
@@ -287,7 +291,7 @@ export function calculateWireSizing(inputs: WireSizingInputs): WireSizingResult 
     if (amp >= loadAmps) {
       const cm = WIRE_AREAS[size]
       const k = K_FACTOR[material]
-      const vd = (2 * k * loadAmps * distance) / cm
+      const vd = (phaseFactor * k * loadAmps * distance) / cm
       const percent = (vd / systemVoltage) * 100
       return {
         recommendedSize: size,

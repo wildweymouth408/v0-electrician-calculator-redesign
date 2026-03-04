@@ -18,10 +18,16 @@ export function VoltageDropCalculator() {
     phase: 'single',
   })
 
-  const result = calculateVoltageDrop(inputs)
-  const hasResult = inputs.current > 0 && inputs.distance > 0
+  // Input validation — NEC calculations are meaningless with negative or zero values
+  const currentError = inputs.current <= 0 ? 'Current must be greater than 0A' : inputs.current > 6000 ? 'Exceeds 6000A maximum' : null
+  const distanceError = inputs.distance <= 0 ? 'Distance must be greater than 0 ft' : inputs.distance > 10000 ? 'Exceeds 10,000 ft maximum' : null
+  const hasErrors = currentError !== null || distanceError !== null
+  const hasResult = !hasErrors && inputs.current > 0 && inputs.distance > 0
+
+  const result = hasResult ? calculateVoltageDrop(inputs) : null
 
   function handleSave() {
+    if (!result) return
     const calc: SavedCalculation = {
       id: generateId(),
       type: 'Voltage Drop',
@@ -34,7 +40,9 @@ export function VoltageDropCalculator() {
     toast.success('Calculation saved')
   }
 
-  const jobNote = `[Voltage Drop] ${inputs.systemVoltage}V, ${inputs.current}A, ${inputs.distance}ft, #${inputs.wireSize} ${inputs.material === 'copper' ? 'Cu' : 'Al'} = ${result.voltageDrop}V / ${result.dropPercent}% (${result.pass ? 'PASS' : 'FAIL'})`
+  const jobNote = result
+    ? `[Voltage Drop] ${inputs.systemVoltage}V, ${inputs.current}A, ${inputs.distance}ft, #${inputs.wireSize} ${inputs.material === 'copper' ? 'Cu' : 'Al'} = ${result.voltageDrop}V / ${result.dropPercent}% (${result.pass ? 'PASS' : 'FAIL'})`
+    : ''
 
   return (
     <div className="flex flex-col gap-5">
@@ -49,7 +57,7 @@ export function VoltageDropCalculator() {
             strokeDasharray="4 8"
             style={{ animation: 'electron-flow 0.8s linear infinite' }}
           />
-          {hasResult && (
+          {hasResult && result && (
             <text x="200" y="14" textAnchor="middle" fill="#888" fontSize="10" fontFamily="var(--font-mono)">
               {result.voltageDrop}V drop over {inputs.distance}ft
             </text>
@@ -89,20 +97,26 @@ export function VoltageDropCalculator() {
             <input
               type="number"
               value={inputs.current || ''}
+              min={0.1}
+              max={6000}
               onChange={e => setInputs(p => ({ ...p, current: Number(e.target.value) }))}
               placeholder="20"
-              className="h-12 border border-[#333] bg-[#111] px-3 font-mono text-sm text-[#f0f0f0] focus:border-[#ff6b00] focus:outline-none"
+              className={`h-12 border bg-[#111] px-3 font-mono text-sm text-[#f0f0f0] focus:outline-none ${currentError ? 'border-red-500 focus:border-red-500' : 'border-[#333] focus:border-[#ff6b00]'}`}
             />
+            {currentError && <span className="text-[10px] text-red-400">{currentError}</span>}
           </label>
           <label className="flex flex-1 flex-col gap-1">
             <span className="text-[11px] uppercase tracking-wider text-[#888]">Distance (ft)</span>
             <input
               type="number"
               value={inputs.distance || ''}
+              min={1}
+              max={10000}
               onChange={e => setInputs(p => ({ ...p, distance: Number(e.target.value) }))}
               placeholder="100"
-              className="h-12 border border-[#333] bg-[#111] px-3 font-mono text-sm text-[#f0f0f0] focus:border-[#ff6b00] focus:outline-none"
+              className={`h-12 border bg-[#111] px-3 font-mono text-sm text-[#f0f0f0] focus:outline-none ${distanceError ? 'border-red-500 focus:border-red-500' : 'border-[#333] focus:border-[#ff6b00]'}`}
             />
+            {distanceError && <span className="text-[10px] text-red-400">{distanceError}</span>}
           </label>
         </div>
 
@@ -132,7 +146,7 @@ export function VoltageDropCalculator() {
       </div>
 
       {/* Results */}
-      {hasResult && (
+      {hasResult && result && (
         <div className="border border-[#333] bg-[#111] p-4">
           <div className="mb-3 flex items-center justify-between">
             <span className="text-[11px] uppercase tracking-wider text-[#888]">Result</span>
@@ -155,11 +169,13 @@ export function VoltageDropCalculator() {
             <span className="text-sm text-[#888]">of {inputs.systemVoltage}V</span>
           </div>
           <p className="text-xs text-[#888]">{result.recommendation}</p>
+          {/* NEC citation — NEC 215.2(A)(1)(b): 3% max for branch/feeder; 5% max total */}
+          <p className="text-[10px] text-[#444] mt-2">NEC 215.2(A)(1)(b) · NEC 310.15 · Formula: VD = ({inputs.phase === 'three' ? '√3' : '2'} × K × I × D) / CM</p>
         </div>
       )}
 
       {/* Actions */}
-      {hasResult && (
+      {hasResult && result && (
         <div className="flex flex-col gap-2">
           <button
             onClick={handleSave}

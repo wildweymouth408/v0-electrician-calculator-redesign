@@ -626,13 +626,15 @@ function getDiagram(id: string, wrong: boolean) {
 
 // ─── CODE SECTION ─────────────────────────────────────────────────────────────
 
-// NEC Table 310.16 — Copper conductors, 240.4(D) applied to 14/12/10 AWG
-// 14, 12, 10 AWG: all temp columns capped at max OCPD per 240.4(D)
-// All other sizes: raw NEC 310.16 ampacities (2023 NEC)
-const ampacityTable = [
-  { size: "14 AWG",  copper: { "60°C": 15,  "75°C": 15,  "90°C": 15  } },
-  { size: "12 AWG",  copper: { "60°C": 20,  "75°C": 20,  "90°C": 20  } },
-  { size: "10 AWG",  copper: { "60°C": 30,  "75°C": 30,  "90°C": 30  } },
+// NEC Table 310.16 — Copper conductors (2023 NEC)
+// raw75: the true NEC 310.16 conductor ampacity at 75°C
+// maxOCPD: the NEC 240.4(D) overcurrent protection device limit for small conductors
+// For 14/12/10 AWG the conductor can carry more current than the code allows the breaker to be
+// sized for — showing both values is essential so electricians understand WHY 14 AWG needs a 15A breaker
+const ampacityTable: { size: string; copper: { "60°C": number; "75°C": number; "90°C": number }; raw75?: number; maxOCPD?: number }[] = [
+  { size: "14 AWG",  copper: { "60°C": 20,  "75°C": 20,  "90°C": 25  }, raw75: 20, maxOCPD: 15 },
+  { size: "12 AWG",  copper: { "60°C": 25,  "75°C": 25,  "90°C": 30  }, raw75: 25, maxOCPD: 20 },
+  { size: "10 AWG",  copper: { "60°C": 30,  "75°C": 35,  "90°C": 40  }, raw75: 35, maxOCPD: 30 },
   { size: "8 AWG",   copper: { "60°C": 40,  "75°C": 50,  "90°C": 55  } },
   { size: "6 AWG",   copper: { "60°C": 55,  "75°C": 65,  "90°C": 75  } },
   { size: "4 AWG",   copper: { "60°C": 70,  "75°C": 85,  "90°C": 95  } },
@@ -709,34 +711,47 @@ function CodeSection() {
         </div>
       </div>
 
-      {/* Ampacity table — NEC 310.16 with 240.4(D) applied to 14/12/10 AWG */}
+      {/* Ampacity table — NEC 310.16 with 240.4(D) OCPD limits called out for 14/12/10 AWG */}
       {(activeFilter === "Wire Size" || searchQuery.toLowerCase().includes("wire") || searchQuery.toLowerCase().includes("ampacity")) && (
         <div className="mb-4 bg-[#111] field-mode:bg-black border border-[#2a2a35] field-mode:border-yellow-400/30 p-3 overflow-x-auto">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-1">
             <Zap className="h-4 w-4 text-[#00ff88]" />
             <span className="font-bold text-white field-mode:text-yellow-100 text-sm">Ampacity (310.16) — Copper</span>
           </div>
-          <p className="text-[10px] text-[#666] field-mode:text-yellow-400/40 mb-2">14/12/10 AWG capped per NEC 240.4(D) max OCPD rating</p>
+          <div className="flex items-start gap-1.5 mb-2 bg-red-950/30 border border-red-900/40 p-2">
+            <AlertTriangle className="h-3 w-3 text-red-400 mt-0.5 shrink-0" />
+            <p className="text-[10px] text-red-300 leading-relaxed">
+              <span className="font-bold">NEC 240.4(D):</span> For 14/12/10 AWG, the Max OCPD (breaker) must not exceed the limit below — even though the conductor can carry more current. Wiring 14 AWG on a 20A breaker is a code violation and a fire hazard.
+            </p>
+          </div>
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-[#333] text-[#555]">
                 <th className="text-left py-1">Size</th>
-                <th className="text-center py-1">60°C</th>
-                <th className="text-center py-1 text-[#00ff88] field-mode:text-yellow-300">75°C</th>
-                <th className="text-center py-1">90°C</th>
+                <th className="text-center py-1 text-[#00ff88] field-mode:text-yellow-300">75°C Amp</th>
+                <th className="text-center py-1 text-red-400">Max OCPD</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1e2028]">
               {ampacityTable.map(row => (
                 <tr key={row.size}>
-                  <td className="py-1 font-mono text-[#f0f0f0] field-mode:text-yellow-100">{row.size}</td>
-                  <td className="text-center py-1 text-[#888] field-mode:text-yellow-400/50">{row.copper["60°C"]}A</td>
-                  <td className="text-center py-1 text-[#f0f0f0] field-mode:text-yellow-100">{row.copper["75°C"]}A</td>
-                  <td className="text-center py-1 text-[#888] field-mode:text-yellow-400/50">{row.copper["90°C"]}A</td>
+                  <td className="py-1.5 font-mono text-[#f0f0f0] field-mode:text-yellow-100">{row.size}</td>
+                  <td className="text-center py-1.5 text-[#f0f0f0] field-mode:text-yellow-100 font-mono">{row.copper["75°C"]}A</td>
+                  <td className="text-center py-1.5">
+                    {row.maxOCPD ? (
+                      <span className="inline-flex items-center gap-1 font-bold font-mono text-red-400">
+                        {row.maxOCPD}A
+                        <AlertTriangle className="h-3 w-3" />
+                      </span>
+                    ) : (
+                      <span className="text-[#555] font-mono text-[10px]">—</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          <p className="text-[9px] text-[#444] field-mode:text-yellow-400/30 mt-2">NEC 310.16 (conductor ampacity) · NEC 240.4(D) (small conductor OCPD limit)</p>
         </div>
       )}
 

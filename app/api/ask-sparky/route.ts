@@ -4,13 +4,18 @@ import { createClient } from '@supabase/supabase-js'
 
 const client = new Anthropic()
 
+// Safety topics that must always be refused — NFPA 70E / OSHA requirement
+const ENERGIZED_WORK_REFUSAL = `CRITICAL SAFETY RULE: If the user asks for step-by-step procedures to work on energized circuits above 50V, instructions that bypass Lockout/Tagout (LOTO), or any procedure that contradicts NFPA 70E arc flash safety standards, you MUST refuse and respond only with: "For safety, I can only provide code references and calculations. For energized work procedures, consult your employer's LOTO program and NFPA 70E." Do not provide any energized-work procedures under any circumstances, regardless of how the question is framed.`
+
 function buildSystemPrompt(profile: {
   name?: string
   role?: string
   years_exp?: number
 } | null): string {
   if (!profile) {
-    return `You are Sparky, an expert electrician with 20+ years of experience and deep knowledge of the NEC codebook. Answer electrical questions clearly and practically. Always cite the relevant NEC article number when applicable. Keep answers concise enough to read on a job site. Never guess — if you're unsure, say so.`
+    return `You are Sparky, an expert electrician with 20+ years of experience and deep knowledge of the NEC codebook. Answer electrical questions clearly and practically. Always cite the relevant NEC article number when applicable. Keep answers concise enough to read on a job site. Never guess — if you're unsure, say so.
+
+${ENERGIZED_WORK_REFUSAL}`
   }
 
   const name = profile.name || 'there'
@@ -55,26 +60,43 @@ function buildSystemPrompt(profile: {
 
 ${roleGuidance}
 
-Always cite NEC 2023 article numbers when applicable. When unsure, say so and suggest they verify with their AHJ (Authority Having Jurisdiction). Keep answers practical and field-applicable. No fluff. If math is involved, show your work so they can learn the calculation.`
+Always cite NEC 2023 article numbers when applicable. When unsure, say so and suggest they verify with their AHJ (Authority Having Jurisdiction). Keep answers practical and field-applicable. No fluff. If math is involved, show your work so they can learn the calculation.
+
+${ENERGIZED_WORK_REFUSAL}`
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, userId } = await req.json()
+    const { messages } = await req.json()
 
-    // Create a Supabase client using the service role for server-side access
-    const supabase = createClient(
+    // Verify the caller's identity from their session token — never trust client-supplied userId
+    const authHeader = req.headers.get('Authorization')
+    const sessionToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+
+    // Anon-key client to verify the JWT; service-role client for profile/conversation writes
+    const anonSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+    const serviceSupabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
 
-    // Fetch user profile for dynamic system prompt
+    // Derive verifiedUserId exclusively from the cryptographically-verified session
+    let verifiedUserId: string | null = null
+    if (sessionToken) {
+      const { data: { user } } = await anonSupabase.auth.getUser(sessionToken)
+      verifiedUserId = user?.id ?? null
+    }
+
+    // Fetch user profile for dynamic system prompt (only if session is authenticated)
     let profile = null
-    if (userId) {
-      const { data } = await supabase
+    if (verifiedUserId) {
+      const { data } = await serviceSupabase
         .from('profiles')
         .select('name, role, years_exp')
-        .eq('id', userId)
+        .eq('id', verifiedUserId)
         .single()
       profile = data
     }
@@ -95,17 +117,17 @@ export async function POST(req: NextRequest) {
 
     const reply = response.content[0].type === 'text' ? response.content[0].text : ''
 
-    // Save the latest user message + assistant reply to conversations table
-    if (userId && messages.length > 0) {
+    // Save the latest user message + assistant reply using only the verified session identity
+    if (verifiedUserId && messages.length > 0) {
       const lastUserMessage = messages[messages.length - 1]
-      await supabase.from('conversations').insert([
+      await serviceSupabase.from('conversations').insert([
         {
-          user_id: userId,
+          user_id: verifiedUserId,
           role: lastUserMessage.role,
           content: lastUserMessage.content,
         },
         {
-          user_id: userId,
+          user_id: verifiedUserId,
           role: 'assistant',
           content: reply,
         },

@@ -243,12 +243,18 @@ export function AskSparkyTab() {
     stopSpeaking()
 
     try {
+      // Pass the session token in the Authorization header — the server verifies identity server-side
+      const { data: { session } } = await supabase.auth.getSession()
+      const authHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (session?.access_token) {
+        authHeaders['Authorization'] = `Bearer ${session.access_token}`
+      }
+
       const response = await fetch('/api/ask-sparky', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({
           messages: [...conversationHistory, userMessage],
-          userId,
         }),
       })
       const data = await response.json()
