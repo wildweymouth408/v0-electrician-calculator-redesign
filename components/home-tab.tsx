@@ -5,11 +5,48 @@ import {
   Zap, User, Award, AlertTriangle, ChevronRight,
   Plus, Trash2, Calendar, Shield, Clock, Lightbulb, Edit2, Check, X,
   Calculator, BookOpen, MessageSquare, Cylinder, Triangle, Ruler, Cable, Gauge, Box, Settings, HardHat,
-  Camera, Image, Expand, Upload, Sun
+  Camera, Image, Expand, Upload, Sun, Mic, MicOff, Send, Loader2
 } from 'lucide-react'
 import { getTipOfTheDay } from '@/lib/tips'
 import { getTopTools, hasUsageData } from '@/lib/usage'
 import { supabase } from '@/lib/supabase'
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition
+    webkitSpeechRecognition: new () => SpeechRecognition
+  }
+  interface SpeechRecognition extends EventTarget {
+    continuous: boolean
+    interimResults: boolean
+    lang: string
+    start(): void
+    stop(): void
+    abort(): void
+    onresult: ((event: SpeechRecognitionEvent) => void) | null
+    onerror: ((event: SpeechRecognitionErrorEvent) => void) | null
+    onend: (() => void) | null
+    onstart: (() => void) | null
+  }
+  interface SpeechRecognitionEvent extends Event {
+    results: SpeechRecognitionResultList
+  }
+  interface SpeechRecognitionResultList {
+    [index: number]: SpeechRecognitionResult
+    length: number
+  }
+  interface SpeechRecognitionResult {
+    [index: number]: SpeechRecognitionAlternative
+    isFinal: boolean
+  }
+  interface SpeechRecognitionAlternative {
+    transcript: string
+    confidence: number
+  }
+  interface SpeechRecognitionErrorEvent extends Event {
+    error: string
+  }
+}
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
@@ -31,7 +68,7 @@ interface Credential {
   imageUrl?: string
 }
 
-type TabId = 'home' | 'tools' | 'reference' | 'sparky' | 'more'
+type TabId = 'home' | 'calculators' | 'nec' | 'jobs' | 'settings'
 
 interface HomeTabProps {
   onNavigate?: (tab: TabId, toolId?: string) => void
@@ -52,22 +89,22 @@ const DEFAULT_CREDENTIALS: Credential[] = []
 // ─── TOOL DEFINITIONS ────────────────────────────────────────────────────────
 
 const ALL_TOOLS = [
-  { id: 'voltage-drop',  label: 'Voltage Drop',  desc: 'V, A, length, wire',      icon: Zap,       color: '#ff6b00', tab: 'tools' as TabId },
-  { id: 'conduit-fill',  label: 'Conduit Fill',  desc: 'Type, size, wire count',   icon: Cylinder,  color: '#00d4ff', tab: 'tools' as TabId },
-  { id: 'ohms-law',      label: "Ohm's Law",     desc: 'V, I, R triangle',         icon: Triangle,  color: '#ffaa00', tab: 'tools' as TabId },
-  { id: 'pipe-bending',  label: 'Pipe Bending',  desc: 'Offsets, 90s, saddles',    icon: Ruler,     color: '#ff6b00', tab: 'tools' as TabId },
-  { id: 'wire-sizing',   label: 'Wire Sizing',   desc: 'Load, distance, NEC',      icon: Cable,     color: '#00ff88', tab: 'tools' as TabId },
-  { id: 'ampacity',      label: 'Ampacity',      desc: 'Derating & correction',    icon: Gauge,     color: '#00d4ff', tab: 'tools' as TabId },
-  { id: 'box-fill',      label: 'Box Fill',      desc: 'NEC 314.16 volumes',       icon: Box,       color: '#ffaa00', tab: 'tools' as TabId },
-  { id: 'motor-fla',     label: 'Motor FLA',     desc: '430.248/250 tables',       icon: Settings,  color: '#00d4ff', tab: 'tools' as TabId },
-  { id: 'construction',  label: 'Construction',  desc: 'Fractions, feet & inches', icon: HardHat,   color: '#ffaa00', tab: 'tools' as TabId },
+  { id: 'voltage-drop',  label: 'Voltage Drop',  desc: 'V, A, length, wire',      icon: Zap,       color: '#ff6b00', tab: 'calculators' as TabId },
+  { id: 'conduit-fill',  label: 'Conduit Fill',  desc: 'Type, size, wire count',   icon: Cylinder,  color: '#00d4ff', tab: 'calculators' as TabId },
+  { id: 'ohms-law',      label: "Ohm's Law",     desc: 'V, I, R triangle',         icon: Triangle,  color: '#ffaa00', tab: 'calculators' as TabId },
+  { id: 'pipe-bending',  label: 'Pipe Bending',  desc: 'Offsets, 90s, saddles',    icon: Ruler,     color: '#ff6b00', tab: 'calculators' as TabId },
+  { id: 'wire-sizing',   label: 'Wire Sizing',   desc: 'Load, distance, NEC',      icon: Cable,     color: '#00ff88', tab: 'calculators' as TabId },
+  { id: 'ampacity',      label: 'Ampacity',      desc: 'Derating & correction',    icon: Gauge,     color: '#00d4ff', tab: 'calculators' as TabId },
+  { id: 'box-fill',      label: 'Box Fill',      desc: 'NEC 314.16 volumes',       icon: Box,       color: '#ffaa00', tab: 'calculators' as TabId },
+  { id: 'motor-fla',     label: 'Motor FLA',     desc: '430.248/250 tables',       icon: Settings,  color: '#00d4ff', tab: 'calculators' as TabId },
+  { id: 'construction',  label: 'Construction',  desc: 'Fractions, feet & inches', icon: HardHat,   color: '#ffaa00', tab: 'calculators' as TabId },
 ]
 
 const DEFAULT_QUICK_ACTIONS = [
-  { id: 'sparky-chat',  label: 'Ask Sparky',    desc: 'Get a code answer fast', icon: MessageSquare, color: '#ff6b00', tab: 'sparky'    as TabId },
-  { id: 'voltage-drop', label: 'Voltage Drop',  desc: 'Most-used calculator',   icon: Zap,           color: '#00d4ff', tab: 'tools'     as TabId },
-  { id: 'nec-ref',      label: 'NEC Reference', desc: 'Look up an article',     icon: BookOpen,      color: '#00ff88', tab: 'reference' as TabId },
-  { id: 'box-fill',     label: 'Box Fill',      desc: 'NEC 314.16 volumes',     icon: Box,           color: '#ffaa00', tab: 'tools'     as TabId },
+  { id: 'voltage-drop',  label: 'Voltage Drop',     desc: 'Most-used calculator',    icon: Zap,           color: '#00d4ff', tab: 'calculators' as TabId },
+  { id: 'pipe-bending',  label: 'Conduit Bending',  desc: 'Chart, brands, calc',     icon: Ruler,         color: '#ff6b00', tab: 'calculators' as TabId },
+  { id: 'nec-ref',       label: 'NEC Reference',    desc: 'Look up an article',      icon: BookOpen,      color: '#00ff88', tab: 'nec'         as TabId },
+  { id: 'box-fill',      label: 'Box Fill',          desc: 'NEC 314.16 volumes',      icon: Box,           color: '#ffaa00', tab: 'calculators' as TabId },
 ]
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -485,6 +522,225 @@ function EditCredentialModal({ cred, userId, onSave, onClose }: {
   )
 }
 
+// ─── ASK SPARKY VOICE WIDGET ─────────────────────────────────────────────────
+
+const SPARKY_SYSTEM_PROMPT = `You are Sparky, an expert electrician with 20+ years of experience and deep knowledge of the NEC codebook. Answer electrical questions clearly and practically. Always cite the relevant NEC article number when applicable. Keep answers concise enough to read on a job site. Never guess — if you're unsure, say so.
+
+CONDUIT BENDING MATH (EMT hand benders — always show your work):
+Offset multipliers (distance between bends = offset height × multiplier):
+  10° → ×6.0  | shrinkage per inch of offset: 1/16"
+  22.5° → ×2.6 | shrinkage per inch: 3/16"
+  30° → ×2.0  | shrinkage per inch: 1/4"  ← recommend for most offsets
+  45° → ×1.414 | shrinkage per inch: 3/8"
+  60° → ×1.154 | shrinkage per inch: 1/2"
+90° take-up: 1/2" EMT→5"  3/4"→6"  1"→8"  1-1/4"→11"  1-1/2"→13"  2"→16"
+Show step-by-step calculations and mark placement in plain terms.`
+
+function AskSparkyWidget({ fieldMode }: { fieldMode: boolean }) {
+  const [input, setInput] = useState('')
+  const [response, setResponse] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [isListening, setIsListening] = useState(false)
+  const [voiceSupported, setVoiceSupported] = useState(false)
+  const [usedVoice, setUsedVoice] = useState(false)
+  const [useOllama, setUseOllama] = useState(false)
+  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([])
+
+  useEffect(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (SR) setVoiceSupported(true)
+    if ('speechSynthesis' in window) {
+      const load = () => { voicesRef.current = window.speechSynthesis.getVoices() }
+      load()
+      window.speechSynthesis.addEventListener('voiceschanged', load)
+      return () => window.speechSynthesis.removeEventListener('voiceschanged', load)
+    }
+  }, [])
+
+  useEffect(() => {
+    setUseOllama(localStorage.getItem('sparky_use_ollama') === 'true')
+  }, [])
+
+  function toggleOllama() {
+    const next = !useOllama
+    setUseOllama(next)
+    localStorage.setItem('sparky_use_ollama', next ? 'true' : 'false')
+    setResponse('')
+  }
+
+  function startListening() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SR) return
+    const rec = new SR()
+    rec.continuous = false
+    rec.interimResults = false
+    rec.lang = 'en-US'
+    rec.onstart = () => { setIsListening(true); setUsedVoice(true) }
+    rec.onresult = (e) => {
+      const text = e.results[0][0].transcript
+      setInput(text)
+    }
+    rec.onend = () => setIsListening(false)
+    rec.onerror = () => setIsListening(false)
+    recognitionRef.current = rec
+    rec.start()
+  }
+
+  function stopListening() {
+    recognitionRef.current?.stop()
+    setIsListening(false)
+  }
+
+  function speak(text: string) {
+    if (!('speechSynthesis' in window)) return
+    window.speechSynthesis.cancel()
+    const cleaned = text.replace(/\*\*/g, '').replace(/#{1,3}\s/g, '').substring(0, 600)
+    const utt = new SpeechSynthesisUtterance(cleaned)
+    utt.rate = 0.95
+    const preferred = voicesRef.current.find(v =>
+      v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Alex'))
+    )
+    if (preferred) utt.voice = preferred
+    window.speechSynthesis.speak(utt)
+  }
+
+  async function ask() {
+    const text = input.trim()
+    if (!text || loading) return
+    setLoading(true)
+    setResponse('')
+    try {
+      let reply = ''
+      if (useOllama) {
+        // Call local Ollama directly from the browser (OpenAI-compatible API)
+        const res = await fetch('http://localhost:11434/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'qwen2.5:3b',
+            messages: [
+              { role: 'system', content: SPARKY_SYSTEM_PROMPT },
+              { role: 'user', content: text },
+            ],
+          }),
+        })
+        if (!res.ok) throw new Error(`Ollama ${res.status}`)
+        const data = await res.json()
+        reply = data.choices?.[0]?.message?.content || 'No response from local model.'
+      } else {
+        const { supabase } = await import('@/lib/supabase')
+        const { data: { session } } = await supabase.auth.getSession()
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+        if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
+        const res = await fetch('/api/ask-sparky', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ messages: [{ role: 'user', content: text }] }),
+        })
+        const data = await res.json()
+        reply = data.reply || 'Something went wrong.'
+      }
+      setResponse(reply)
+      if (usedVoice) speak(reply)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : ''
+      if (useOllama && msg.includes('fetch')) {
+        setResponse('Cannot reach Ollama. Make sure it\'s running: OLLAMA_ORIGINS=* ollama serve')
+      } else {
+        setResponse('Connection error. Check your signal.')
+      }
+    } finally {
+      setLoading(false)
+      setInput('')
+      setUsedVoice(false)
+    }
+  }
+
+  const border = fieldMode ? 'border-yellow-400/30 bg-black' : 'border-[#2a2a35] bg-[#111]'
+  const inputCls = fieldMode
+    ? 'flex-1 h-11 px-3 text-sm bg-black border border-yellow-400/30 text-yellow-100 placeholder-yellow-400/30 focus:outline-none focus:border-yellow-400'
+    : 'flex-1 h-11 px-3 text-sm bg-[#0a0b0e] border border-[#333] text-[#f0f0f0] placeholder-[#444] focus:outline-none focus:border-[#ff6b00]'
+
+  return (
+    <div className={`border p-4 flex flex-col gap-3 ${border}`}>
+      <div className="flex items-center gap-2">
+        <Zap className="h-4 w-4 text-[#ff6b00]" />
+        <span className={`text-[11px] font-bold uppercase tracking-widest ${fieldMode ? 'text-yellow-300' : 'text-[#ff6b00]'}`}>
+          Ask Sparky
+        </span>
+        <button
+          onClick={toggleOllama}
+          title={useOllama ? 'Using local Ollama (Qwen 2.5 3B) — tap to switch to Claude' : 'Using Claude Haiku — tap to use local Ollama'}
+          className={`ml-auto text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 border transition-colors ${
+            useOllama
+              ? 'border-green-500/60 text-green-400 bg-green-500/10'
+              : fieldMode
+                ? 'border-yellow-400/20 text-yellow-400/40'
+                : 'border-[#333] text-[#444] hover:border-[#555] hover:text-[#666]'
+          }`}
+        >
+          {useOllama ? 'Ollama' : 'Cloud'}
+        </button>
+        {voiceSupported && (
+          <span className={`text-[9px] uppercase tracking-wider ${fieldMode ? 'text-yellow-400/40' : 'text-[#444]'}`}>
+            {usedVoice ? '🎤 → spoken' : 'mic on'}
+          </span>
+        )}
+      </div>
+
+      <div className="flex gap-2">
+        {voiceSupported && (
+          <button
+            onClick={() => isListening ? stopListening() : startListening()}
+            disabled={loading}
+            className={`h-11 w-11 shrink-0 flex items-center justify-center border transition-all ${
+              isListening
+                ? 'border-[#ff6b00] bg-[#ff6b0020] text-[#ff6b00] animate-pulse'
+                : fieldMode
+                  ? 'border-yellow-400/30 text-yellow-400/50'
+                  : 'border-[#333] text-[#555] hover:border-[#ff6b00] hover:text-[#ff6b00]'
+            }`}
+          >
+            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+          </button>
+        )}
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && ask()}
+          placeholder={isListening ? 'Listening...' : '"I have 3/4 EMT, need a 6" offset..."'}
+          className={inputCls}
+          disabled={loading}
+        />
+        <button
+          onClick={ask}
+          disabled={loading || !input.trim()}
+          className="h-11 w-11 shrink-0 flex items-center justify-center bg-[#ff6b00] text-[#0f1115] disabled:opacity-40"
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        </button>
+      </div>
+
+      {response && (
+        <div className={`text-sm leading-relaxed p-3 border-l-2 border-[#ff6b00] ${
+          fieldMode ? 'text-yellow-100 bg-black' : 'text-[#ddd] bg-[#0a0b0e]'
+        }`}>
+          {response}
+        </div>
+      )}
+
+      {loading && (
+        <div className="flex gap-1 items-center px-1">
+          <span className="w-1.5 h-1.5 bg-[#ff6b00] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <span className="w-1.5 h-1.5 bg-[#ff6b00] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+          <span className="w-1.5 h-1.5 bg-[#ff6b00] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── MAIN HOME TAB ────────────────────────────────────────────────────────────
 
 export function HomeTab({ onNavigate }: HomeTabProps) {
@@ -681,6 +937,9 @@ export function HomeTab({ onNavigate }: HomeTabProps) {
         </div>
       )}
 
+      {/* Ask Sparky voice widget */}
+      <AskSparkyWidget fieldMode={fieldMode} />
+
       {/* Tip of the day */}
       {tip && (
         <div className={fm.tipCard}>
@@ -722,7 +981,7 @@ export function HomeTab({ onNavigate }: HomeTabProps) {
             return (
               <button
                 key={action.id}
-                onClick={() => onNavigate?.(action.tab, action.id !== 'sparky-chat' && action.id !== 'nec-ref' ? action.id : undefined)}
+                onClick={() => onNavigate?.(action.tab, action.id !== 'nec-ref' ? action.id : undefined)}
                 className={fm.actionBtn}
                 style={{ borderLeftColor: borderColor, borderLeftWidth: 3 }}
               >

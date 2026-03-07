@@ -4,6 +4,29 @@ import { createClient } from '@supabase/supabase-js'
 
 const client = new Anthropic()
 
+// Conduit bending reference data embedded in every system prompt
+const CONDUIT_BENDING_REFERENCE = `
+CONDUIT BENDING MATH (EMT hand benders — always show your work):
+
+Offset multipliers (distance between bends = offset height × multiplier):
+  10° → ×6.0  | shrinkage per inch of offset: 1/16" (0.0625")
+  22.5° → ×2.6 | shrinkage per inch: 3/16" (0.1875")
+  30° → ×2.0  | shrinkage per inch: 1/4" (0.25")  ← recommend for most offsets
+  45° → ×1.414 | shrinkage per inch: 3/8" (0.375")
+  60° → ×1.154 | shrinkage per inch: 1/2" (0.5")
+
+90° take-up (deduct from stub length before marking):
+  1/2" EMT → 5"  |  3/4" EMT → 6"  |  1" EMT → 8"
+  1-1/4" EMT → 11"  |  1-1/2" EMT → 13"  |  2" EMT → 16"
+
+When a user describes a bending scenario, always:
+1. Identify the conduit size and type
+2. Identify the bend needed (offset, 90°, saddle, back-to-back)
+3. Show the calculation step by step with real numbers
+4. Give the mark placement in plain terms ("place your Arrow mark at X inches from the end")
+5. Keep it short enough to read on a job site
+`
+
 // Safety topics that must always be refused — NFPA 70E / OSHA requirement
 const ENERGIZED_WORK_REFUSAL = `CRITICAL SAFETY RULE: If the user asks for step-by-step procedures to work on energized circuits above 50V, instructions that bypass Lockout/Tagout (LOTO), or any procedure that contradicts NFPA 70E arc flash safety standards, you MUST refuse and respond only with: "For safety, I can only provide code references and calculations. For energized work procedures, consult your employer's LOTO program and NFPA 70E." Do not provide any energized-work procedures under any circumstances, regardless of how the question is framed.`
 
@@ -14,6 +37,8 @@ function buildSystemPrompt(profile: {
 } | null): string {
   if (!profile) {
     return `You are Sparky, an expert electrician with 20+ years of experience and deep knowledge of the NEC codebook. Answer electrical questions clearly and practically. Always cite the relevant NEC article number when applicable. Keep answers concise enough to read on a job site. Never guess — if you're unsure, say so.
+
+${CONDUIT_BENDING_REFERENCE}
 
 ${ENERGIZED_WORK_REFUSAL}`
   }
@@ -62,6 +87,8 @@ ${roleGuidance}
 
 Always cite NEC 2023 article numbers when applicable. When unsure, say so and suggest they verify with their AHJ (Authority Having Jurisdiction). Keep answers practical and field-applicable. No fluff. If math is involved, show your work so they can learn the calculation.
 
+${CONDUIT_BENDING_REFERENCE}
+
 ${ENERGIZED_WORK_REFUSAL}`
 }
 
@@ -106,7 +133,7 @@ export async function POST(req: NextRequest) {
 
     // Call Claude
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,
       system: systemPrompt,
       messages: messages.map((m: { role: string; content: string }) => ({
